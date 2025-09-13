@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 项目特定
+# 运行时生成的图像
+data/temp/*
+data/images/target_learning/*
+!data/temp/.gitkeep
+!data/images/target_learning/.gitkeep
+
+# 模型文件 (可能很大)
+data/models/*.bin
+data/models/*.pkl
+data/models/*.h5
+data/models/*.onnx
+
+# 日志文件
+*.log
+logs/
+
+# 配置文件副本
+config/*.backup
+config/*_local.json
+
+# 编译文件
+gimbal_c_code/*.o
+gimbal_c_code/*.exe
+gimbal_c_code/build/
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.bak
+
+# 测试输出
+test_results/
+test_images/
+
+# 环境变量
+.env
+.env.local
