@@ -210,26 +210,27 @@ class PersonDetector:
         Returns:
             image: 标记后的图像
         """
-        # 导入image模块以获取正确的API
-        from maix import image
-        
         for detection in detections:
             x, y, w, h = detection['bbox']
             detection_type = detection['type']
             confidence = detection['confidence']
             
-            # 绘制绿色边界框 - 使用正确的MaixPy API
+            # 绘制绿色边界框 - 使用MaixPy的正确API
             color = image.Color.from_rgb(0, 255, 0)  # 绿色
             try:
-                # MaixPy的正确绘制方法
+                # 尝试MaixPy的rect绘制方法
                 img.draw_rect(x, y, w, h, color=color, thickness=2)
             except AttributeError:
-                # 如果draw_rect不存在，尝试其他方法
                 try:
+                    # 尝试其他可能的方法名
                     img.draw_rectangle(x, y, x+w, y+h, color=color, thickness=2)
                 except AttributeError:
-                    # 降级处理：只打印信息
-                    print(f"绘制绿色框: ({x}, {y}, {w}, {h}) - {detection_type}")
+                    try:
+                        # 尝试更简单的绘制方法
+                        img.draw_rect(x, y, x+w, y+h, color)
+                    except:
+                        # 降级处理：只打印信息
+                        print(f"绘制绿色框: ({x}, {y}, {w}, {h}) - {detection_type}")
             
             # 绘制标签
             label = f"{detection_type}: {confidence:.2f}"

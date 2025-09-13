@@ -222,18 +222,22 @@ class PersonDetector:
             detection_type = detection['type']
             confidence = detection['confidence']
             
-            # 绘制绿色边界框 - 使用正确的MaixPy API
+            # 绘制绿色边界框 - 使用MaixPy的正确API
             color = image.Color.from_rgb(0, 255, 0)  # 绿色
             try:
-                # MaixPy的正确绘制方法
+                # 尝试MaixPy的rect绘制方法
                 img.draw_rect(x, y, w, h, color=color, thickness=2)
             except AttributeError:
-                # 如果draw_rect不存在，尝试其他方法
                 try:
+                    # 尝试其他可能的方法名
                     img.draw_rectangle(x, y, x+w, y+h, color=color, thickness=2)
                 except AttributeError:
-                    # 最后尝试使用PIL风格的绘制
-                    print(f"绘制边界框: ({x}, {y}, {w}, {h})")
+                    try:
+                        # 尝试更简单的绘制方法
+                        img.draw_rect(x, y, x+w, y+h, color)
+                    except:
+                        # 如果都失败，至少打印信息
+                        print(f"绘制边界框: ({x}, {y}, {w}, {h}) - {detection_type}")
             
             # 绘制标签
             label = f"{detection_type}: {confidence:.2f}"
@@ -242,7 +246,7 @@ class PersonDetector:
             except AttributeError:
                 try:
                     img.draw_text(x, max(y-20, 0), label, color=color)
-                except AttributeError:
+                except:
                     print(f"检测标签: {label} at ({x}, {y})")
             
             # 如果是人脸检测，绘制关键点
@@ -250,12 +254,9 @@ class PersonDetector:
                 landmarks = detection['landmarks']
                 for point in landmarks:
                     try:
-                        img.draw_circle(point[0], point[1], 2, color=color, thickness=-1)
-                    except AttributeError:
-                        try:
-                            img.draw_circle(point[0], point[1], 2, color=color)
-                        except AttributeError:
-                            print(f"关键点: ({point[0]}, {point[1]})")
+                        img.draw_circle(point[0], point[1], 2, color=color)
+                    except:
+                        print(f"关键点: ({point[0]}, {point[1]})")
         
         return img
 
