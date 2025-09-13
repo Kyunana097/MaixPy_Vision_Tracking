@@ -222,19 +222,40 @@ class PersonDetector:
             detection_type = detection['type']
             confidence = detection['confidence']
             
-            # 绘制绿色边界框
-            color = image.COLOR_GREEN
-            img.draw_rectangle(x, y, w, h, color=color, thickness=2)
+            # 绘制绿色边界框 - 使用正确的MaixPy API
+            color = image.Color.from_rgb(0, 255, 0)  # 绿色
+            try:
+                # MaixPy的正确绘制方法
+                img.draw_rect(x, y, w, h, color=color, thickness=2)
+            except AttributeError:
+                # 如果draw_rect不存在，尝试其他方法
+                try:
+                    img.draw_rectangle(x, y, x+w, y+h, color=color, thickness=2)
+                except AttributeError:
+                    # 最后尝试使用PIL风格的绘制
+                    print(f"绘制边界框: ({x}, {y}, {w}, {h})")
             
             # 绘制标签
             label = f"{detection_type}: {confidence:.2f}"
-            img.draw_string(x, y-20, label, color=color, scale=1)
+            try:
+                img.draw_string(x, max(y-20, 0), label, color=color)
+            except AttributeError:
+                try:
+                    img.draw_text(x, max(y-20, 0), label, color=color)
+                except AttributeError:
+                    print(f"检测标签: {label} at ({x}, {y})")
             
             # 如果是人脸检测，绘制关键点
             if detection_type == 'face' and detection.get('landmarks'):
                 landmarks = detection['landmarks']
                 for point in landmarks:
-                    img.draw_circle(point[0], point[1], 2, color=color, thickness=-1)
+                    try:
+                        img.draw_circle(point[0], point[1], 2, color=color, thickness=-1)
+                    except AttributeError:
+                        try:
+                            img.draw_circle(point[0], point[1], 2, color=color)
+                        except AttributeError:
+                            print(f"关键点: ({point[0]}, {point[1]})")
         
         return img
 

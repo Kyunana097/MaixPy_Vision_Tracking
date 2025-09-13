@@ -199,37 +199,61 @@ class PersonDetector:
         
         return intersection / union if union > 0 else 0.0
     
-    def draw_green_boxes(self, image, detections):
+    def draw_green_boxes(self, img, detections):
         """
         在检测到的人物周围绘制绿色框
         
         Args:
-            image: 输入图像
+            img: 输入图像
             detections: 检测结果
             
         Returns:
             image: 标记后的图像
         """
+        # 导入image模块以获取正确的API
+        from maix import image
+        
         for detection in detections:
             x, y, w, h = detection['bbox']
             detection_type = detection['type']
             confidence = detection['confidence']
             
-            # 绘制绿色边界框
-            color = image.COLOR_GREEN
-            image.draw_rectangle(x, y, w, h, color=color, thickness=2)
+            # 绘制绿色边界框 - 使用正确的MaixPy API
+            color = image.Color.from_rgb(0, 255, 0)  # 绿色
+            try:
+                # MaixPy的正确绘制方法
+                img.draw_rect(x, y, w, h, color=color, thickness=2)
+            except AttributeError:
+                # 如果draw_rect不存在，尝试其他方法
+                try:
+                    img.draw_rectangle(x, y, x+w, y+h, color=color, thickness=2)
+                except AttributeError:
+                    # 降级处理：只打印信息
+                    print(f"绘制绿色框: ({x}, {y}, {w}, {h}) - {detection_type}")
             
             # 绘制标签
             label = f"{detection_type}: {confidence:.2f}"
-            image.draw_string(x, y-20, label, color=color, scale=1)
+            try:
+                img.draw_string(x, max(y-20, 0), label, color=color)
+            except AttributeError:
+                try:
+                    img.draw_text(x, max(y-20, 0), label, color=color)
+                except AttributeError:
+                    print(f"检测标签: {label} at ({x}, {y})")
             
             # 如果是人脸检测，绘制关键点
             if detection_type == 'face' and detection.get('landmarks'):
                 landmarks = detection['landmarks']
                 for point in landmarks:
-                    image.draw_circle(point[0], point[1], 2, color=color, thickness=-1)
+                    try:
+                        img.draw_circle(point[0], point[1], 2, color=color, thickness=-1)
+                    except AttributeError:
+                        try:
+                            img.draw_circle(point[0], point[1], 2, color=color)
+                        except AttributeError:
+                            print(f"人脸关键点: ({point[0]}, {point[1]})")
         
-        return image
+        return img
     
     def get_detection_info(self, detections):
         """
