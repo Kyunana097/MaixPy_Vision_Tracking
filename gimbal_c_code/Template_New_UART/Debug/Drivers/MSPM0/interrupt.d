@@ -1,0 +1,163 @@
+# FIXED
+
+Drivers/MSPM0/interrupt.o: ../Drivers/MSPM0/interrupt.c \
+ ti_msp_dl_config.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/msp.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/DeviceFamily.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/m0p/mspm0g350x.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/third_party/CMSIS/Core/Include/core_cm0plus.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_adc12.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_aes.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_comp.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_crc.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_dac12.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_dma.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_flashctl.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_gpio.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_gptimer.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_i2c.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_iomux.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_mathacl.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_mcan.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_oa.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_rtc.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_spi.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_trng.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_uart.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_vref.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_wuc.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_wwdt.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_factoryregion.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_cpuss.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_debugss.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_sysctl.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/sysctl/hw_sysctl_mspm0g1x0x_g3x0x.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/driverlib.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_adc12.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_common.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_factoryregion.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_core.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_aes.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_aesadv.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_comp.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_crc.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_crcp.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_dac12.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_dma.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_flashctl.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_sysctl.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/sysctl/dl_sysctl_mspm0g1x0x_g3x0x.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_gpamp.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_gpio.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_i2c.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_iwdt.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_lfss.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_keystorectl.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_lcd.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_mathacl.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_mcan.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_opa.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc_common.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc_a.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc_b.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_scratchpad.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_spi.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_tamperio.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_timera.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_timer.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_timerg.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_trng.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_uart_extend.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_uart.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_uart_main.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_vref.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_wwdt.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_interrupt.h \
+ /home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_systick.h \
+ ../Drivers/MSPM0/interrupt.h \
+ /home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/K230_UART/K230_UART.h \
+ /home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/MSPM0/clock.h \
+ ../Drivers/MSPM0/clock.h \
+ /home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/Key/key.h \
+ /home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/MSPM0/interrupt.h
+ti_msp_dl_config.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/msp.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/DeviceFamily.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/m0p/mspm0g350x.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/third_party/CMSIS/Core/Include/core_cm0plus.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_adc12.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_aes.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_comp.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_crc.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_dac12.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_dma.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_flashctl.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_gpio.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_gptimer.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_i2c.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_iomux.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_mathacl.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_mcan.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_oa.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_rtc.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_spi.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_trng.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_uart.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_vref.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_wuc.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/hw_wwdt.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_factoryregion.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_cpuss.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_debugss.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/hw_sysctl.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/devices/msp/peripherals/m0p/sysctl/hw_sysctl_mspm0g1x0x_g3x0x.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/driverlib.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_adc12.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_common.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_factoryregion.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_core.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_aes.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_aesadv.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_comp.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_crc.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_crcp.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_dac12.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_dma.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_flashctl.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_sysctl.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/sysctl/dl_sysctl_mspm0g1x0x_g3x0x.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_gpamp.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_gpio.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_i2c.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_iwdt.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_lfss.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_keystorectl.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_lcd.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_mathacl.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_mcan.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_opa.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc_common.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc_a.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_rtc_b.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_scratchpad.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_spi.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_tamperio.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_timera.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_timer.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_timerg.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_trng.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_uart_extend.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_uart.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_uart_main.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_vref.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/dl_wwdt.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_interrupt.h:
+/home/kyunana/ti/mspm0_sdk_2_05_01_00/source/ti/driverlib/m0p/dl_systick.h:
+../Drivers/MSPM0/interrupt.h:
+/home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/K230_UART/K230_UART.h:
+/home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/MSPM0/clock.h:
+../Drivers/MSPM0/clock.h:
+/home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/Key/key.h:
+/home/kyunana/workspace_ccstheia/Template_New_UART/Drivers/MSPM0/interrupt.h:
