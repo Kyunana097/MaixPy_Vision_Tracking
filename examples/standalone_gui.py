@@ -548,8 +548,16 @@ class StandaloneGUI:
         
         print(f"Display resolution: {display_width} x {display_height}")
         
-        # 对于常见的512x320显示屏的情况
-        if display_width == 512 and display_height == 320:
+        # 基于实际校准数据的精确映射
+        if display_width == 640 and display_height == 480:
+            # 用户设备校准后的精确参数
+            self.touch_scale_x = 1.6615
+            self.touch_scale_y = 1.7352
+            self.touch_offset_x = -197.74
+            self.touch_offset_y = -140.00
+            print(f"Applied calibrated mapping: scale_x={self.touch_scale_x:.4f}, scale_y={self.touch_scale_y:.4f}")
+            print(f"Applied calibrated offsets: offset_x={self.touch_offset_x:.2f}, offset_y={self.touch_offset_y:.2f}")
+        elif display_width == 512 and display_height == 320:
             # 假设触摸屏分辨率可能是800x480或其他
             self.touch_scale_x = display_width / 800.0  # 假设触摸屏宽度800
             self.touch_scale_y = display_height / 480.0  # 假设触摸屏高度480

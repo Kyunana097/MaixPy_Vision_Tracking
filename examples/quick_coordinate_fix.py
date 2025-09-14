@@ -33,12 +33,18 @@ class QuickCoordinateFix:
             return
         
         # 预设的坐标映射方案
+        # 基于用户实际数据分析: 触摸范围(60-566, 44-352) -> 显示范围(0-640, 0-480)
+        touch_width = 566 - 60  # 506
+        touch_height = 352 - 44  # 308
+        calculated_scale_x = self.display_width / touch_width  # 640/506 ≈ 1.265
+        calculated_scale_y = self.display_height / touch_height  # 480/308 ≈ 1.558
+        
         self.mapping_presets = [
             {"name": "1:1 (No scaling)", "scale_x": 1.0, "scale_y": 1.0, "offset_x": 0, "offset_y": 0},
-            {"name": "800x480->512x320", "scale_x": 512/800, "scale_y": 320/480, "offset_x": 0, "offset_y": 0},
-            {"name": "1024x600->512x320", "scale_x": 512/1024, "scale_y": 320/600, "offset_x": 0, "offset_y": 0},
-            {"name": "480x320->512x320", "scale_x": 512/480, "scale_y": 320/320, "offset_x": 0, "offset_y": 0},
-            {"name": "Half scale", "scale_x": 0.5, "scale_y": 0.5, "offset_x": 0, "offset_y": 0},
+            {"name": "Calculated from your data", "scale_x": calculated_scale_x, "scale_y": calculated_scale_y, "offset_x": -60, "offset_y": -44},
+            {"name": "Conservative scaling", "scale_x": 1.2, "scale_y": 1.4, "offset_x": -50, "offset_y": -40},
+            {"name": "Aggressive scaling", "scale_x": 1.4, "scale_y": 1.8, "offset_x": -70, "offset_y": -50},
+            {"name": "800x480->640x480", "scale_x": 640/800, "scale_y": 480/480, "offset_x": 0, "offset_y": 0},
             {"name": "Double scale", "scale_x": 2.0, "scale_y": 2.0, "offset_x": 0, "offset_y": 0},
         ]
         
