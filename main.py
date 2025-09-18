@@ -86,6 +86,17 @@ class MaixVisionSystem:
                 return False
             print("✅ Camera ok")
 
+            # 初始化人物检测器
+            print("🔍 Initializing person detector...")
+            try:
+                from src.vision.detection.person_detector import PersonDetector
+                camera_width, camera_height = self.camera.get_resolution()
+                self.detector = PersonDetector(camera_width, camera_height)
+                print("✅ Person detector initialized")
+            except Exception as e:
+                print(f"✗ Person detector initialization failed: {e}")
+                self.detector = None
+
             print("🧠 Initializing recognizer... (skipped - to be integrated)")
             print("🎮 Initializing gimbal... (skipped - to be integrated)")
 
@@ -292,6 +303,11 @@ class MaixVisionSystem:
         print(f"  Camera resolution: {self.camera.get_resolution()}")
         if self.button_manager:
             print(f"  Touch available: {self.button_manager.has_touchscreen}")
+        if self.detector:
+            debug_info = self.detector.get_debug_info()
+            print(f"  Detector status: {debug_info}")
+        else:
+            print("  Detector: Not initialized")
     
     def _handle_mode_button(self):
         """处理模式切换按钮"""
@@ -343,12 +359,63 @@ class MaixVisionSystem:
 
     # =============== 模式实现（占位，用于分模块调试） ===============
     def _mode_record(self, img):
-        # 待接入：检测+注册流程。当前仅显示原图。
-        pass
+        # 检测+注册流程模式
+        if self.detector:
+            # 检测人物
+            detections = self.detector.detect_persons(img)
+            
+            if detections:
+                # 绘制检测框（录制模式用黄色）
+                try:
+                    from maix import image as _image
+                    for detection in detections:
+                        bbox = detection['bbox']
+                        x, y, w, h = bbox
+                        yellow_color = _image.Color.from_rgb(255, 255, 0)
+                        img.draw_rect(x, y, w, h, color=yellow_color, thickness=3)
+                        
+                        # 绘制提示
+                        img.draw_string(x, max(y-20, 0), "Recording...", color=yellow_color)
+                except:
+                    pass
+                
+                # TODO: 添加注册逻辑
+                # if self.recognizer:
+                #     for detection in detections:
+                #         face_bbox = detection.get('face_bbox')
+                #         if face_bbox:
+                #             success, person_id, message = self.recognizer.register_person(img, "NewPerson", face_bbox)
+        else:
+            # 检测器未初始化时显示提示
+            try:
+                from maix import image as _image
+                img.draw_string(10, 200, "Person detector not available", color=_image.COLOR_WHITE)
+            except:
+                pass
 
     def _mode_recognize(self, img):
-        # 待接入：检测+识别+目标标记。当前仅显示原图。
-        pass
+        # 检测+识别+目标标记模式
+        if self.detector:
+            # 检测人物
+            detections = self.detector.detect_persons(img)
+            
+            if detections:
+                # 绘制检测框
+                img = self.detector.draw_detection_boxes(img, detections)
+                
+                # TODO: 添加识别逻辑
+                # for detection in detections:
+                #     face_bbox = detection.get('face_bbox')
+                #     if face_bbox and self.recognizer:
+                #         person_id, confidence, person_name = self.recognizer.recognize_person(img, face_bbox)
+                #         # 绘制识别结果
+        else:
+            # 检测器未初始化时显示提示
+            try:
+                from maix import image as _image
+                img.draw_string(10, 200, "Person detector not available", color=_image.COLOR_WHITE)
+            except:
+                pass
 
     def _mode_track(self, img):
         # 待接入：检测+识别+云台追踪。当前仅显示原图。
