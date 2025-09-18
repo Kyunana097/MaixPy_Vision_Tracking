@@ -4,13 +4,15 @@
 摄像头控制模块
 负责摄像头初始化和图像采集
 """
+from maix import camera
+import time
 
 class CameraController:
     """
     摄像头控制器类
     """
     
-    def __init__(self, width=320, height=240):
+    def __init__(self, width=512, height=320):
         """
         初始化摄像头控制器
         
@@ -18,11 +20,9 @@ class CameraController:
             width: 图像宽度
             height: 图像高度
         """
-        # TODO: 初始化摄像头参数
         self.width = width
         self.height = height
         self.camera = None
-        pass
     
     def initialize_camera(self):
         """
@@ -31,8 +31,13 @@ class CameraController:
         Returns:
             bool: 初始化是否成功
         """
-        # TODO: 初始化MaixPy摄像头
-        pass
+        try:
+            # 使用初始化时设置的分辨率
+            self.camera = camera.Camera(self.width, self.height)
+            return True
+        except Exception:
+            self.camera = None
+            return False
     
     def capture_image(self):
         """
@@ -41,16 +46,27 @@ class CameraController:
         Returns:
             image: 采集到的图像
         """
-        # TODO: 从摄像头采集图像
-        pass
+        if self.camera is None:
+            return None
+        try:
+            img = self.camera.read()
+            # 轻微限速，避免占满CPU（单位：秒）
+            time.sleep(0.001)
+            return img
+        except Exception:
+            return None
     
     def release_camera(self):
         """
         释放摄像头资源
         """
-        # TODO: 释放摄像头
-        pass
-    
+        try:
+            if self.camera is not None:
+                if hasattr(self.camera, "close"):
+                    self.camera.close()
+        finally:
+            self.camera = None
+
     def set_resolution(self, width, height):
         """
         设置摄像头分辨率
@@ -59,5 +75,18 @@ class CameraController:
             width: 图像宽度
             height: 图像高度
         """
-        # TODO: 设置摄像头分辨率
-        pass
+        self.width = width
+        self.height = height
+        if self.camera is not None:
+            # 重新初始化以应用新分辨率
+            self.release_camera()
+            self.initialize_camera()
+
+    def get_resolution(self):
+        """
+        获取当前分辨率
+        
+        Returns:
+            tuple[int, int]: (width, height)
+        """
+        return self.width, self.height
