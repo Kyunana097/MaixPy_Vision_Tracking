@@ -349,7 +349,7 @@ class MaixVisionSystem:
             
             # 在EXIT按钮下方显示FPS
             fps_text = f"FPS: {self.current_fps:.1f}"
-            img.draw_string(20, 105, fps_text, color=_image.COLOR_BLUE, scale=0.8)
+            img.draw_string(20, 105, fps_text, color=_image.COLOR_YELLOW, scale=1.2)
             
         except Exception as e:
             # 绘制错误时输出调试信息
