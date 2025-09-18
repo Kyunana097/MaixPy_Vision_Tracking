@@ -39,7 +39,6 @@ for base in candidate_roots:
         pass
 
 
-# 摄像头控制器：优先使用项目中的实现，找不到则使用内置兜底版
 USING_EMBEDDED_CAMERA = False
 try:
     from src.hardware.camera.camera_controller import CameraController
@@ -51,61 +50,32 @@ except Exception:
         print("[Error] Maix camera module not available:", _e)
         raise
 
-    class CameraController:
-        def __init__(self, width=512, height=320):
-            self.width = width
-            self.height = height
-            self.camera = None
-
-        def initialize_camera(self):
-            try:
-                self.camera = _maix_camera.Camera(self.width, self.height)
-                return True
-            except Exception:
-                self.camera = None
-                return False
-
-        def capture_image(self):
-            if self.camera is None:
-                return None
-            try:
-                img = self.camera.read()
-                time.sleep(0.001)
-                return img
-            except Exception:
-                return None
-
-        def release_camera(self):
-            try:
-                if self.camera is not None and hasattr(self.camera, "close"):
-                    self.camera.close()
-            finally:
-                self.camera = None
-
-        def set_resolution(self, width, height):
-            self.width = width
-            self.height = height
-            if self.camera is not None:
-                self.release_camera()
-                self.initialize_camera()
-
-        def get_resolution(self):
-            return self.width, self.height
-
-    USING_EMBEDDED_CAMERA = True
-
-
 class MaixVisionSystem:
     def __init__(self):
         print("=== MaixPy Vision Tracking System ===")
         print("Initializing system...")
 
         self.camera = CameraController(width=512, height=320)
-        self.detector = None
-        self.recognizer = None
-        self.gimbal = None
+        self.detector = None  # 待集成：检测模块
+        self.recognizer = None  # 待集成：识别模块
+        self.gimbal = None  # 待集成：云台模块
         self.running = False
         self.disp = None
+        self.mode = os.getenv("MODE", "recognize")  # record | recognize | track
+        if self.mode not in ("record", "recognize", "track"):
+            self.mode = "recognize"
+        print(f"Mode: {self.mode}")
+        self.max_persons = 3
+        
+        # 虚拟按钮管理器
+        self.button_manager = None
+        self.button_click_count = 0
+        
+        # FPS计算相关
+        self.fps_counter = 0
+        self.fps_start_time = time.time()
+        self.current_fps = 0.0
+        self.last_fps_update = time.time()
 
     def initialize_modules(self):
         try:
@@ -116,14 +86,8 @@ class MaixVisionSystem:
                 return False
             print("✅ Camera ok")
 
-            print("🔍 Initializing detector...")
-            # TODO: 初始化人脸检测模块
-
-            print("🧠 Initializing recognizer...")
-            # TODO: 初始化人脸识别模块
-
-            print("🎮 Initializing gimbal...")
-            # TODO: 初始化云台模块
+            print("🧠 Initializing recognizer... (skipped - to be integrated)")
+            print("🎮 Initializing gimbal... (skipped - to be integrated)")
 
             # 初始化显示（如果可用）
             if _maix_display is not None:
@@ -131,6 +95,18 @@ class MaixVisionSystem:
                     self.disp = _maix_display.Display()
                 except Exception:
                     self.disp = None
+            
+            # 初始化虚拟按钮
+            print("🔘 Initializing virtual buttons...")
+            try:
+                from src.hardware.button import VirtualButtonManager, ButtonPresets
+                camera_width, camera_height = self.camera.get_resolution()
+                self.button_manager = VirtualButtonManager(camera_width, camera_height)
+                self._setup_buttons()
+                print("✅ Virtual buttons initialized")
+            except Exception as e:
+                print(f"✗ Virtual buttons initialization failed: {e}")
+                self.button_manager = None
 
             print("✅ All modules initialized successfully!")
             return True
@@ -163,12 +139,42 @@ class MaixVisionSystem:
             # 显示画面
             if self.disp is not None:
                 try:
+                    # 处理虚拟按钮输入
+                    if self.button_manager:
+                        clicked_button = self.button_manager.check_touch_input()
+                        self.button_manager.update()
+                    
+                    # 运行当前模式（占位，待模块接入）
+                    if self.mode == "record":
+                        self._mode_record(img)
+                    elif self.mode == "recognize":
+                        self._mode_recognize(img)
+                    elif self.mode == "track":
+                        self._mode_track(img)
+                    
+                    # 绘制界面信息
+                    self._draw_ui_info(img)
+                    
+                    # 绘制虚拟按钮
+                    if self.button_manager:
+                        self.button_manager.draw_all(img)
+                        self.button_manager.draw_touch_indicator(img)
+                    
+                    # 显示
                     self.disp.show(img)
                 except Exception:
                     pass
 
             # TODO: 检测/识别/云台/触摸UI等
 
+            # 初始化帧计数器（如果还没有）
+            if not hasattr(self, 'frame_count'):
+                self.frame_count = 0
+            self.frame_count += 1
+            
+            # 更新FPS计算
+            self._update_fps()
+            
             time.sleep(0.01)
 
     def cleanup(self):
@@ -176,8 +182,177 @@ class MaixVisionSystem:
         try:
             if self.camera:
                 self.camera.release_camera()
+            # 云台模块尚未集成
         finally:
             print("✅ Cleanup completed")
+
+    # =============== 虚拟按钮相关 ===============
+    def _update_fps(self):
+        """更新FPS计算（每半秒更新一次）"""
+        self.fps_counter += 1
+        current_time = time.time()
+        
+        # 每半秒更新一次FPS显示
+        if current_time - self.last_fps_update >= 0.5:
+            time_diff = current_time - self.fps_start_time
+            if time_diff > 0:
+                self.current_fps = self.fps_counter / time_diff
+                
+            # 重置计数器
+            self.fps_counter = 0
+            self.fps_start_time = current_time
+            self.last_fps_update = current_time
+    
+    def _setup_buttons(self):
+        """设置虚拟按钮"""
+        if not self.button_manager:
+            return
+        
+        try:
+            from src.hardware.button import ButtonPresets
+            
+            # 创建简化的控制按钮（适合调试）
+            width, height = self.camera.get_resolution()
+            
+            # 调试按钮
+            debug_btn = self.button_manager.create_button(
+                button_id='debug',
+                x=width - 100,
+                y=20,
+                width=80,
+                height=40,
+                text='DEBUG'
+            )
+            debug_btn.set_colors(
+                normal=(100, 100, 200),  # 蓝色
+                active=(150, 150, 255),  # 亮蓝色
+                disabled=(60, 60, 60)
+            )
+            debug_btn.set_click_callback(self._on_button_click)
+            
+            # 模式切换按钮
+            mode_btn = self.button_manager.create_button(
+                button_id='mode',
+                x=width - 100,
+                y=70,
+                width=80,
+                height=40,
+                text=self.mode.upper()
+            )
+            mode_btn.set_colors(
+                normal=(200, 100, 0),    # 橙色
+                active=(255, 150, 0),    # 亮橙色
+                disabled=(60, 60, 60)
+            )
+            mode_btn.set_click_callback(self._on_button_click)
+            
+            # 退出按钮
+            exit_btn = self.button_manager.create_button(
+                button_id='exit',
+                x=20,
+                y=20,
+                width=60,
+                height=30,
+                text='EXIT'
+            )
+            exit_btn.set_colors(
+                normal=(150, 0, 0),      # 红色
+                active=(200, 0, 0),      # 亮红色
+                disabled=(60, 60, 60)
+            )
+            exit_btn.set_click_callback(self._on_button_click)
+            
+            print(f"Created {len(self.button_manager.buttons)} virtual buttons")
+            
+        except Exception as e:
+            print(f"Button setup error: {e}")
+    
+    def _on_button_click(self, button_id: str):
+        """
+        按钮点击回调函数
+        
+        Args:
+            button_id: 被点击的按钮ID
+        """
+        self.button_click_count += 1
+        print(f"🔘 Button clicked: {button_id} (total clicks: {self.button_click_count})")
+        
+        if button_id == 'debug':
+            self._handle_debug_button()
+        elif button_id == 'mode':
+            self._handle_mode_button()
+        elif button_id == 'exit':
+            self._handle_exit_button()
+    
+    def _handle_debug_button(self):
+        """处理调试按钮点击"""
+        print("🐛 Debug button pressed!")
+        print(f"  Current mode: {self.mode}")
+        print(f"  Frame count: {getattr(self, 'frame_count', 0)}")
+        print(f"  Camera resolution: {self.camera.get_resolution()}")
+        if self.button_manager:
+            print(f"  Touch available: {self.button_manager.has_touchscreen}")
+    
+    def _handle_mode_button(self):
+        """处理模式切换按钮"""
+        modes = ["record", "recognize", "track"]
+        current_idx = modes.index(self.mode)
+        next_idx = (current_idx + 1) % len(modes)
+        self.mode = modes[next_idx]
+        
+        print(f"🔄 Mode switched to: {self.mode}")
+        
+        # 更新按钮文字
+        if self.button_manager:
+            mode_btn = self.button_manager.get_button('mode')
+            if mode_btn:
+                mode_btn.set_text(self.mode.upper())
+    
+    def _handle_exit_button(self):
+        """处理退出按钮"""
+        print("🚪 Exit button pressed - stopping system")
+        self.running = False
+    
+    def _draw_ui_info(self, img):
+        """
+        绘制界面信息
+        
+        Args:
+            img: 图像对象
+        """
+        try:
+            # 检查是否有MaixPy的image模块
+            try:
+                from maix import image as _image
+            except:
+                return
+            
+            # 系统标题
+            title = f"{self.mode.upper()} Mode"
+            img.draw_string(200, 10, title, color=_image.COLOR_WHITE, scale=1.0)
+            
+            # 在EXIT按钮下方显示FPS
+            fps_text = f"FPS: {self.current_fps:.1f}"
+            img.draw_string(20, 105, fps_text, color=_image.COLOR_BLUE, scale=0.8)
+            
+        except Exception as e:
+            # 绘制错误时输出调试信息
+            print(f"UI draw error: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # =============== 模式实现（占位，用于分模块调试） ===============
+    def _mode_record(self, img):
+        # 待接入：检测+注册流程。当前仅显示原图。
+        pass
+
+    def _mode_recognize(self, img):
+        # 待接入：检测+识别+目标标记。当前仅显示原图。
+        pass
+
+    def _mode_track(self, img):
+        # 待接入：检测+识别+云台追踪。当前仅显示原图。
+        pass
 
 
 def main():
