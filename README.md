@@ -101,13 +101,25 @@ MaixPy_Vision_Tracking/
 - Python 3.x (开发调试用)
 
 ### 快速开始
-1. 准备三张人物图像（5x5cm²以内）
-2. 将图像贴在白底A4纸上
-3. 运行主程序
-4. 进行目标学习
-5. 开始监控
+1. 将项目完整拷贝到设备（确保 `main.py` 与 `src/` 同级）
+2. 运行主程序（推荐在设备端运行整个项目）：
+```bash
+python3 main.py
+```
+3. 若未部署 `src/` 目录，主程序会自动启用内置摄像头兜底，仍能显示实时画面
 
 ## 更新日志
+
+### v1.1.0 (2025-09-18) - 结构精简与入口统一
+**主要更新:**
+- 📦 将示例/调试脚本归档至 `examples/_archive/`，保留核心示例
+- 🟢 主入口统一为 `main.py`，自动兼容 MaixPy `/tmp/maixpy_run` 路径
+- 🖥️ 默认显示摄像头画面；未找到 `src/` 时启用内置摄像头控制器
+
+**保留的核心示例:**
+- `examples/test_camera.py`
+- `examples/standalone_gui.py`
+- `examples/simple_high_fps_gui.py`
 
 ### v1.0.0 (2025-09-14) - 核心功能完成
 **主要功能实现:**
