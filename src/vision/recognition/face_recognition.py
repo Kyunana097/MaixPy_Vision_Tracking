@@ -142,29 +142,58 @@ class PersonRecognizer:
                 # 使用内置识别器检测人脸（用于注册）
                 faces = self.face_recognizer.recognize(
                     img, 
-                    conf_th=0.5,     # 检测置信度阈值
+                    conf_th=0.4,     # 降低检测置信度阈值，更容易检测
                     iou_th=0.45,     # IoU阈值
-                    compare_th=0.85, # 比较阈值 (修正参数名)
+                    compare_th=0.3,  # 降低比较阈值，注册时更宽松
                     get_feature=False, # 不需要特征，提高性能
                     get_face=True     # 获取人脸图像用于注册
                 )
                 
-                # 查找可注册的人脸 (优先选择未知人脸)
+                # 查找可注册的人脸
                 target_face = None
                 
-                # 首先尝试找未知人脸 (class_id == 0)
-                for face in faces:
-                    if face.class_id == 0:  # 未知人脸
-                        target_face = face
-                        break
-                
-                # 如果没有未知人脸，选择第一个检测到的人脸进行强制注册
-                if target_face is None and faces:
-                    target_face = faces[0]
-                    print("⚠️ 未检测到未知人脸，使用第一个检测到的人脸进行注册")
+                if bbox is not None:
+                    # 如果提供了bbox，找最接近的人脸
+                    bbox_x, bbox_y, bbox_w, bbox_h = bbox
+                    best_overlap = 0
+                    
+                    for face in faces:
+                        # 计算重叠区域
+                        x1 = max(bbox_x, face.x)
+                        y1 = max(bbox_y, face.y)
+                        x2 = min(bbox_x + bbox_w, face.x + face.w)
+                        y2 = min(bbox_y + bbox_h, face.y + face.h)
+                        
+                        if x2 > x1 and y2 > y1:
+                            overlap = (x2 - x1) * (y2 - y1)
+                            bbox_area = bbox_w * bbox_h
+                            face_area = face.w * face.h
+                            overlap_ratio = overlap / min(bbox_area, face_area)
+                            
+                            if overlap_ratio > best_overlap:
+                                best_overlap = overlap_ratio
+                                target_face = face
+                    
+                    if best_overlap > 0.3:  # 30%重叠阈值
+                        print(f"✓ 找到匹配的人脸 (重叠度: {best_overlap:.2f})")
+                    else:
+                        print("⚠️ 未找到与bbox匹配的人脸，尝试使用第一个检测到的人脸")
+                        target_face = faces[0] if faces else None
+                else:
+                    # 没有提供bbox，使用默认逻辑
+                    # 首先尝试找未知人脸 (class_id == 0)
+                    for face in faces:
+                        if face.class_id == 0:  # 未知人脸
+                            target_face = face
+                            break
+                    
+                    # 如果没有未知人脸，选择第一个检测到的人脸进行强制注册
+                    if target_face is None and faces:
+                        target_face = faces[0]
+                        print("⚠️ 未检测到未知人脸，使用第一个检测到的人脸进行注册")
                 
                 if target_face is None:
-                    return False, None, "未检测到任何人脸"
+                    return False, None, f"未检测到任何人脸 (检测到 {len(faces)} 个对象)"
                 
                 # 使用内置识别器添加人脸
                 face_id = f"id_{self.builtin_learn_id}"
@@ -320,7 +349,7 @@ class PersonRecognizer:
                 # 使用内置识别器进行识别（GPU加速）
                 faces = self.face_recognizer.recognize(
                     img, 
-                    conf_th=0.5,     # 检测置信度阈值
+                    conf_th=0.4,     # 降低检测置信度阈值  
                     iou_th=0.45,     # IoU阈值  
                     compare_th=self.similarity_threshold,  # 比较阈值 (修正参数名)
                     get_feature=False, # 不需要特征，提高性能
@@ -640,7 +669,7 @@ class PersonRecognizer:
             try:
                 faces = self.face_recognizer.recognize(
                     img, 
-                    conf_th=0.5, 
+                    conf_th=0.4,     # 降低检测置信度阈值
                     iou_th=0.45, 
                     compare_th=0.1,  # 低阈值，只用于检测 (修正参数名)
                     get_feature=False, # 不需要特征
