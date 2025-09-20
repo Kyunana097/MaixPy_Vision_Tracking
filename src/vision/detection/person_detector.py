@@ -133,13 +133,13 @@ class PersonDetector:
                     pass
             
             # 绘制标签
-            try:
-                confidence = detection.get('confidence', 0.0)
-                label = f"Person: {confidence:.2f}"
-                white_color = image.Color.from_rgb(255, 255, 255)
-                img.draw_string(x, max(y-20, 0), label, color=white_color)
-            except:
-                pass
+            #try:
+                #confidence = detection.get('confidence', 0.0)
+                #label = f"Person: {confidence:.2f}"
+                #white_color = image.Color.from_rgb(255, 255, 255)
+                #img.draw_string(x, max(y-20, 0), label, color=white_color)
+            #except:
+                #pass
         
         return img
     

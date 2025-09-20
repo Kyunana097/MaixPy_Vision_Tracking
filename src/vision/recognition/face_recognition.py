@@ -108,7 +108,7 @@ class PersonRecognizer:
                 print("✓ 基础人脸检测器初始化成功")
             except Exception as e2:
                 self.face_detector = None
-        self.has_face_detector = False
+                self.has_face_detector = False
                 print(f"✗ 基础检测器也失败: {e2}")
         
         # 存储已记录的人物信息
