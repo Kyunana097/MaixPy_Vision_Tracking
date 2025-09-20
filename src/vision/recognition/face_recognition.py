@@ -139,14 +139,14 @@ class PersonRecognizer:
         # 3. 使用高性能识别器进行注册
         if self.has_builtin_recognizer:
             try:
-                # 使用内置识别器检测和注册人脸
+                # 使用内置识别器检测人脸（用于注册）
                 faces = self.face_recognizer.recognize(
                     img, 
                     conf_th=0.5,     # 检测置信度阈值
                     iou_th=0.45,     # IoU阈值
-                    score_th=0.85,   # 识别分数阈值  
-                    get_face=True,   # 获取人脸图像
-                    learn=True       # 学习模式
+                    compare_th=0.85, # 比较阈值 (修正参数名)
+                    get_feature=False, # 不需要特征，提高性能
+                    get_face=True     # 获取人脸图像用于注册
                 )
                 
                 # 查找未知人脸 (class_id == 0 表示未知)
@@ -315,9 +315,9 @@ class PersonRecognizer:
                     img, 
                     conf_th=0.5,     # 检测置信度阈值
                     iou_th=0.45,     # IoU阈值  
-                    score_th=self.similarity_threshold,  # 识别分数阈值
-                    get_face=False,  # 不需要获取人脸图像，提高性能
-                    learn=False      # 识别模式，不学习
+                    compare_th=self.similarity_threshold,  # 比较阈值 (修正参数名)
+                    get_feature=False, # 不需要特征，提高性能
+                    get_face=False   # 不需要获取人脸图像，提高性能
                 )
                 
                 # 查找已知人脸（class_id > 0）
@@ -635,9 +635,9 @@ class PersonRecognizer:
                     img, 
                     conf_th=0.5, 
                     iou_th=0.45, 
-                    score_th=0.1,  # 低阈值，只用于检测
-                    get_face=False, 
-                    learn=False
+                    compare_th=0.1,  # 低阈值，只用于检测 (修正参数名)
+                    get_feature=False, # 不需要特征
+                    get_face=False   # 不需要人脸图像
                 )
                 if not faces:
                     return None
