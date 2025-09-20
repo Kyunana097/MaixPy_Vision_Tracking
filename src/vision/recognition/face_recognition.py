@@ -20,41 +20,76 @@ class PersonRecognizer:
     
     def __init__(self, model_path="data/models", max_persons=3, similarity_threshold=0.60, detector=None):
         """
-        初始化人物识别器
+        初始化人物识别器 (高性能版本)
         
         Args:
             model_path: 模型和数据存储路径
             max_persons: 最大支持人数（默认3个）
             similarity_threshold: 相似度阈值（默认0.60）
-            detector: 人物检测器实例，用于图像相似度计算
+            detector: 人物检测器实例（保持兼容性）
         """
-        print("🧠 初始化人物识别器...")
+        print("🧠 初始化高性能人物识别器...")
         
         self.model_path = model_path
         self.max_persons = max_persons
         self.similarity_threshold = similarity_threshold
-        self.detector = detector  # 保存检测器引用用于图像比较
+        self.detector = detector  # 保持兼容性
         
         # 创建存储目录结构
         self.faces_path = os.path.join(model_path, "faces")
         self.db_file = os.path.join(model_path, "persons_db.json")
+        self.faces_bin_file = os.path.join(model_path, "faces.bin")  # 新增：用于内置识别器
         os.makedirs(self.faces_path, exist_ok=True)
         
-        # 初始化人脸检测器
+        # 初始化MaixPy内置高性能人脸识别器
         try:
-            from maix import nn
-            self.face_detector = nn.FaceDetector(model="/root/models/face_detector.mud")
-            self.has_face_detector = True
-            print("✓ 人脸检测器初始化成功")
+            from maix import nn, sys
+            
+            # 根据设备选择最优模型
+            if sys.device_name().lower() == "maixcam2":
+                face_detect_model = "/root/models/yolo11s_face.mud"
+                print("🚀 使用YOLO11s人脸检测模型 (MaixCAM2优化)")
+            else:
+                face_detect_model = "/root/models/yolov8n_face.mud"  
+                print("🚀 使用YOLOv8n人脸检测模型")
+            
+            # 使用高精度insightface模型
+            feature_model = "/root/models/insghtface_webface_r50.mud"
+            
+            # 初始化高性能识别器 (GPU加速)
+            self.face_recognizer = nn.FaceRecognizer(
+                detect_model=face_detect_model,
+                feature_model=feature_model,
+                dual_buff=True  # 启用双缓冲提高性能
+            )
+            
+            self.has_builtin_recognizer = True
+            print("✓ 高性能人脸识别器初始化成功")
+            print(f"  🎯 检测模型: {face_detect_model}")
+            print(f"  🧠 特征模型: {feature_model}")
+            print("  ⚡ GPU加速: 已启用")
+            
         except Exception as e:
-            print(f"✗ 人脸检测器初始化失败: {e}")
-            print("  将使用简化的人脸检测模式")
-            self.face_detector = None
-            self.has_face_detector = False
+            print(f"✗ 内置识别器初始化失败: {e}")
+            print("  ⚠️  回退到基础模式")
+            self.face_recognizer = None
+            self.has_builtin_recognizer = False
+            
+            # 回退到基础人脸检测器
+            try:
+                from maix import nn
+                self.face_detector = nn.FaceDetector(model="/root/models/face_detector.mud")
+                self.has_face_detector = True
+                print("✓ 基础人脸检测器初始化成功")
+            except Exception as e2:
+                self.face_detector = None
+                self.has_face_detector = False
+                print(f"✗ 基础检测器也失败: {e2}")
         
         # 存储已记录的人物信息
         self.registered_persons = {}  # person_id -> person_info
         self.face_samples = {}        # person_id -> [sample_file_list]
+        self.builtin_learn_id = 0     # 内置识别器的学习计数器
         
         # 当前选中的目标人物
         self.target_person_id = None
@@ -65,13 +100,23 @@ class PersonRecognizer:
         # 加载已保存的人物数据
         self._load_persons_database()
         
-        print(f"✓ 人物识别器初始化完成")
-        print(f"   最大人数: {max_persons}, 相似度阈值: {similarity_threshold}")
-        print(f"   已加载 {len(self.registered_persons)} 个人物")
+        # 如果有内置识别器，加载之前保存的人脸数据
+        if self.has_builtin_recognizer and os.path.exists(self.faces_bin_file):
+            try:
+                self.face_recognizer.load_faces(self.faces_bin_file)
+                print("✓ 已加载预训练人脸数据")
+            except Exception as e:
+                print(f"⚠️ 人脸数据加载失败: {e}")
+        
+        print(f"✓ 高性能识别器初始化完成")
+        print(f"   🎯 最大人数: {max_persons}, 识别阈值: {similarity_threshold}")
+        print(f"   📊 已加载 {len(self.registered_persons)} 个人物")
+        if self.has_builtin_recognizer:
+            print(f"   🚀 性能模式: GPU加速 + 高精度模型")
     
     def register_person(self, img, person_name, bbox=None):
         """
-        注册新人物
+        注册新人物 (高性能版本)
         
         Args:
             img: 包含人物的图像
@@ -90,6 +135,73 @@ class PersonRecognizer:
             if info['name'] == person_name:
                 return False, None, f"人物 '{person_name}' 已存在"
         
+        # 3. 使用高性能识别器进行注册
+        if self.has_builtin_recognizer:
+            try:
+                # 使用内置识别器检测和注册人脸
+                faces = self.face_recognizer.recognize(
+                    img, 
+                    conf_th=0.5,     # 检测置信度阈值
+                    iou_th=0.45,     # IoU阈值
+                    score_th=0.85,   # 识别分数阈值  
+                    get_face=True,   # 获取人脸图像
+                    learn=True       # 学习模式
+                )
+                
+                # 查找未知人脸 (class_id == 0 表示未知)
+                unknown_face = None
+                for face in faces:
+                    if face.class_id == 0:  # 未知人脸
+                        unknown_face = face
+                        break
+                
+                if unknown_face is None:
+                    return False, None, "未检测到可注册的新人脸"
+                
+                # 使用内置识别器添加人脸
+                face_id = f"id_{self.builtin_learn_id}"
+                self.face_recognizer.add_face(unknown_face, face_id)
+                self.builtin_learn_id += 1
+                
+                # 保存模型数据
+                self.face_recognizer.save_faces(self.faces_bin_file)
+                
+                # 生成person_id并保存元数据
+                person_id = f"person_{len(self.registered_persons) + 1:02d}"
+                
+                # 保存人脸缩略图用于显示
+                if unknown_face.face is not None:
+                    person_dir = os.path.join(self.faces_path, person_id) 
+                    os.makedirs(person_dir, exist_ok=True)
+                    sample_path = os.path.join(person_dir, "sample_001.jpg")
+                    self._save_face_image(unknown_face.face, sample_path)
+                    print(f"✓ 人脸图像已保存: {sample_path}")
+                
+                # 记录人物信息
+                self.registered_persons[person_id] = {
+                    'name': person_name,
+                    'face_id': face_id,  # 内置识别器中的ID
+                    'builtin_id': self.builtin_learn_id - 1,
+                    'sample_count': 1,
+                    'created_time': time.time()
+                }
+                
+                self.face_samples[person_id] = ["sample_001.jpg"]
+                self._save_persons_database()
+                
+                return True, person_id, f"成功注册人物: {person_name}"
+                
+            except Exception as e:
+                print(f"✗ 高性能注册失败: {e}")
+                # 不回退，直接返回失败
+                return False, None, f"注册失败: {str(e)}"
+                
+        else:
+            # 回退到传统方法
+            return self._register_person_fallback(img, person_name, bbox)
+    
+    def _register_person_fallback(self, img, person_name, bbox):
+        """传统注册方法（回退方案）"""
         # 3. 检测和提取人脸
         face_bbox = bbox
         if face_bbox is None:
@@ -180,31 +292,77 @@ class PersonRecognizer:
     
     def recognize_person(self, img, bbox=None):
         """
-        识别图像中的人物
+        识别图像中的人物 (高性能版本)
         
         Args:
             img: 输入图像
-            bbox: 人脸边界框，如果为None则自动检测
+            bbox: 人脸边界框（保持兼容性，内置识别器会自动检测）
             
         Returns:
-            tuple: (person_id: str, confidence: float, person_name: str)
-                  如果未识别到返回 (None, 0.0, "未知")
+            tuple: (person_name: str, confidence: float)
+                  如果未识别到返回 (None, 0.0)
         """
         # 1. 检查是否有已注册人物
         if not self.registered_persons:
-            return None, 0.0, "未知"
+            return None, 0.0
         
+        # 2. 使用高性能识别器
+        if self.has_builtin_recognizer:
+            try:
+                # 使用内置识别器进行识别（GPU加速）
+                faces = self.face_recognizer.recognize(
+                    img, 
+                    conf_th=0.5,     # 检测置信度阈值
+                    iou_th=0.45,     # IoU阈值  
+                    score_th=self.similarity_threshold,  # 识别分数阈值
+                    get_face=False,  # 不需要获取人脸图像，提高性能
+                    learn=False      # 识别模式，不学习
+                )
+                
+                # 查找已知人脸（class_id > 0）
+                best_face = None
+                best_score = 0.0
+                
+                for face in faces:
+                    if face.class_id > 0 and face.score > best_score:
+                        best_face = face
+                        best_score = face.score
+                
+                if best_face is not None:
+                    # 根据内置识别器的标签找到对应的person
+                    builtin_label = self.face_recognizer.labels[best_face.class_id]
+                    
+                    # 查找对应的person_id
+                    for person_id, person_info in self.registered_persons.items():
+                        if person_info.get('face_id') == builtin_label:
+                            person_name = person_info['name']
+                            return person_name, best_score
+                
+                # 未找到匹配
+                return None, 0.0
+                
+            except Exception as e:
+                print(f"✗ 高性能识别失败: {e}")
+                # 不回退，直接返回未知
+                return None, 0.0
+                
+        else:
+            # 回退到传统识别方法
+            return self._recognize_person_fallback(img, bbox)
+    
+    def _recognize_person_fallback(self, img, bbox):
+        """传统识别方法（回退方案）"""
         # 2. 检测和提取人脸
         face_bbox = bbox
         if face_bbox is None:
             face_bbox = self._detect_largest_face(img)
             if face_bbox is None:
-                return None, 0.0, "未知"
+                return None, 0.0
         
         # 3. 提取人脸图像
         face_img = self._extract_face_region(img, face_bbox)
         if face_img is None:
-            return None, 0.0, "未知"
+            return None, 0.0
         
         # 4. 与数据库中的样本进行匹配
         best_person_id = None
@@ -221,9 +379,9 @@ class PersonRecognizer:
         # 5. 判断是否达到识别阈值
         if best_confidence >= self.similarity_threshold:
             person_name = self.registered_persons[best_person_id]['name']
-            return best_person_id, best_confidence, person_name
+            return person_name, best_confidence
         
-        return None, best_confidence, "未知"
+        return None, best_confidence
     
     def delete_person(self, person_id):
         """
@@ -262,19 +420,42 @@ class PersonRecognizer:
     
     def clear_all_persons(self):
         """
-        清空所有已注册人物
+        清空所有已注册人物 (高性能版本)
         
         Returns:
             tuple: (success: bool, message: str)
         """
+        person_count = len(self.registered_persons)
+        
+        # 清空内置识别器数据
+        if self.has_builtin_recognizer:
+            try:
+                # 移除所有已注册的人脸
+                while len(self.face_recognizer.labels) > 1:  # 保留"unknown"标签
+                    self.face_recognizer.remove_face(0)
+                
+                # 保存清空后的数据
+                self.face_recognizer.save_faces(self.faces_bin_file)
+                self.builtin_learn_id = 0  # 重置计数器
+                print("✓ 内置识别器数据已清空")
+            except Exception as e:
+                print(f"⚠️ 清空内置识别器失败: {e}")
+        
         # 删除所有人物文件夹
         if os.path.exists(self.faces_path):
             import shutil
             shutil.rmtree(self.faces_path)
             os.makedirs(self.faces_path, exist_ok=True)
         
+        # 删除保存的二进制文件
+        if os.path.exists(self.faces_bin_file):
+            try:
+                os.remove(self.faces_bin_file)
+                print("✓ 人脸数据文件已删除")
+            except Exception as e:
+                print(f"⚠️ 删除数据文件失败: {e}")
+        
         # 清空内存数据
-        person_count = len(self.registered_persons)
         self.registered_persons.clear()
         self.face_samples.clear()
         self.target_person_id = None
