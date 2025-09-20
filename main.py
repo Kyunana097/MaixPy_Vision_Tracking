@@ -513,7 +513,7 @@ class MaixVisionSystem:
             if face_bbox:
                 try:
                     # 尝试识别这个人脸
-                    person_name, confidence = self.recognizer.recognize_person(img, face_bbox)
+                    person_id, confidence, person_name = self.recognizer.recognize_person(img, face_bbox)
                     
                     if person_name and confidence > 0.6:
                         # 已知人物
@@ -847,7 +847,7 @@ class MaixVisionSystem:
                             try:
                                 # 提取人脸区域进行识别
                                 fx, fy, fw, fh = face_bbox
-                                person_name, confidence = self.recognizer.recognize_person(img, face_bbox)
+                                person_id, confidence, person_name = self.recognizer.recognize_person(img, face_bbox)
                             except Exception as e:
                                 pass  # 识别失败，当作未知人物处理
                         

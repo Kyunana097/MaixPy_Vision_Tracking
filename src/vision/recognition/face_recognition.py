@@ -300,12 +300,12 @@ class PersonRecognizer:
             bbox: 人脸边界框（保持兼容性，内置识别器会自动检测）
             
         Returns:
-            tuple: (person_name: str, confidence: float)
-                  如果未识别到返回 (None, 0.0)
+            tuple: (person_id: str, confidence: float, person_name: str)
+                  如果未识别到返回 (None, 0.0, "未知")
         """
         # 1. 检查是否有已注册人物
         if not self.registered_persons:
-            return None, 0.0
+            return None, 0.0, "未知"
         
         # 2. 使用高性能识别器
         if self.has_builtin_recognizer:
@@ -337,15 +337,15 @@ class PersonRecognizer:
                     for person_id, person_info in self.registered_persons.items():
                         if person_info.get('face_id') == builtin_label:
                             person_name = person_info['name']
-                            return person_name, best_score
+                            return person_id, best_score, person_name
                 
                 # 未找到匹配
-                return None, 0.0
+                return None, 0.0, "未知"
                 
             except Exception as e:
                 print(f"✗ 高性能识别失败: {e}")
                 # 不回退，直接返回未知
-                return None, 0.0
+                return None, 0.0, "未知"
                 
         else:
             # 回退到传统识别方法
@@ -358,12 +358,12 @@ class PersonRecognizer:
         if face_bbox is None:
             face_bbox = self._detect_largest_face(img)
             if face_bbox is None:
-                return None, 0.0
+                return None, 0.0, "未知"
         
         # 3. 提取人脸图像
         face_img = self._extract_face_region(img, face_bbox)
         if face_img is None:
-            return None, 0.0
+            return None, 0.0, "未知"
         
         # 4. 与数据库中的样本进行匹配
         best_person_id = None
@@ -380,9 +380,9 @@ class PersonRecognizer:
         # 5. 判断是否达到识别阈值
         if best_confidence >= self.similarity_threshold:
             person_name = self.registered_persons[best_person_id]['name']
-            return person_name, best_confidence
+            return best_person_id, best_confidence, person_name
         
-        return None, best_confidence
+        return None, best_confidence, "未知"
     
     def delete_person(self, person_id):
         """
