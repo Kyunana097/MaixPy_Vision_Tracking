@@ -10,7 +10,6 @@ import os
 import json
 import time
 import hashlib
-import numpy as np
 
 class PersonRecognizer:
     """
@@ -44,27 +43,50 @@ class PersonRecognizer:
         # 初始化MaixPy内置高性能人脸识别器
         try:
             from maix import nn, sys
-            
-            # 根据设备选择最优模型
-            if sys.device_name().lower() == "maixcam2":
-                face_detect_model = "/root/models/yolo11s_face.mud"
-                print("🚀 使用YOLO11s人脸检测模型 (MaixCAM2优化)")
-            else:
-                face_detect_model = "/root/models/yolov8n_face.mud"  
-                print("🚀 使用YOLOv8n人脸检测模型")
-            
-            # 使用高精度insightface模型
-            feature_model = "/root/models/insightface_webface_r50.mud"
-            
-            # 初始化高性能识别器 (GPU加速)
+            import os
+
+            def _first_exists(paths):
+                for p in paths:
+                    if os.path.exists(p):
+                        return p
+                return None
+
+            device = sys.device_name().lower()
+            detect_candidates = [
+                "/root/models/yolo11s_face.cvimodel",
+                "/root/models/yolov8n_face.cvimodel",
+                "/root/models/yolo11s_face.mud",
+                "/root/models/yolov8n_face.mud",
+                "/root/models/retinaface.mud",
+                "/root/models/face_detector.cvimodel",
+            ]
+            if device == "maixcam2":
+                detect_candidates = [
+                    "/root/models/yolo11s_face.cvimodel",
+                    "/root/models/yolo11s_face.mud",
+                ] + detect_candidates
+
+            feature_candidates = [
+                "/root/models/webface_r50_int8.cvimodel",
+                "/root/models/insightface_webface_r50.mud",
+                "/root/models/face_feature.mud",
+            ]
+
+            face_detect_model = _first_exists(detect_candidates)
+            feature_model = _first_exists(feature_candidates)
+            if not face_detect_model:
+                raise RuntimeError("未找到可用的人脸检测模型文件")
+            if not feature_model:
+                raise RuntimeError("未找到可用的人脸特征模型文件")
+
             self.face_recognizer = nn.FaceRecognizer(
                 detect_model=face_detect_model,
                 feature_model=feature_model,
-                dual_buff=True  # 启用双缓冲提高性能
+                dual_buff=True
             )
-            
+
             self.has_builtin_recognizer = True
-            self.has_face_detector = True  # 内置识别器包含人脸检测功能
+            self.has_face_detector = True
             print("✓ 高性能人脸识别器初始化成功")
             print(f"  🎯 检测模型: {face_detect_model}")
             print(f"  🧠 特征模型: {feature_model}")
@@ -370,6 +392,9 @@ class PersonRecognizer:
     
     def _recognize_person_fallback(self, img, bbox):
         """传统识别方法（回退方案）"""
+        # 提高阈值，避免误判
+        local_threshold = max(self.similarity_threshold, 0.75)
+        
         # 2. 检测和提取人脸
         face_bbox = bbox
         if face_bbox is None:
@@ -395,7 +420,7 @@ class PersonRecognizer:
                 best_person_id = person_id
         
         # 5. 判断是否达到识别阈值
-        if best_confidence >= self.similarity_threshold:
+        if best_confidence >= local_threshold:
             person_name = self.registered_persons[best_person_id]['name']
             return best_person_id, best_confidence, person_name
         

@@ -774,7 +774,6 @@ class MaixVisionSystem:
                         # 直接使用最简单的绘制方法
                         try:
                             img.draw_image(resized_thumb, thumbnail_x, thumbnail_y)
-                            print(f"✓ 缩略图绘制成功: {display_person}")
                             # 在缩略图上方显示"IMG"标识
                             img.draw_string(thumbnail_x + 8, thumbnail_y - 12, "IMG", 
                                           color=info_color, scale=0.6)
