@@ -211,8 +211,8 @@ class PersonRecognizer:
                 self.face_recognizer.save_faces(self.faces_bin_file)
                 
                 # 生成person_id
-                person_id = f"person_{len(self.registered_persons) + 1:02d}"
-                
+        person_id = f"person_{len(self.registered_persons) + 1:02d}"
+        
                 # 保存缩略图
                 if target_face.face is not None:
                     person_dir = os.path.join(self.faces_path, person_id) 
@@ -238,7 +238,7 @@ class PersonRecognizer:
             except Exception as e:
                 print(f"✗ 注册失败: {e}")
                 return False, None, f"注册失败: {str(e)}"
-                
+        
         else:
             # 回退到传统方法
             return self._register_person_fallback(img, person_name, bbox)
