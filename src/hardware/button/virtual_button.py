@@ -164,7 +164,7 @@ class VirtualButton:
             text_x = self.x + (self.width - len(self.text) * 8) // 2
             text_y = self.y + (self.height - 16) // 2
             img.draw_string(text_x, text_y, self.text, 
-                          color=text_color, scale=1.2)
+                          color=text_color, scale=0.8)
             
             # 激活状态的额外效果
             if self.active:
