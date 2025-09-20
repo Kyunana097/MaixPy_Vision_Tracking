@@ -410,6 +410,10 @@ class PersonRecognizer:
             pass
         return None
     
+    def get_registered_persons(self):
+        """获取已注册的人物列表"""
+        return self.registered_persons
+    
     def get_status_info(self):
         """获取状态信息"""
         return {
