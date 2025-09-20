@@ -272,7 +272,7 @@ class PersonDetector:
             
             # 综合相似度
             final_similarity = size_ratio * 0.6 + header_similarity * 0.4
-            return max(0.1, min(0.9, final_similarity))
+            return max(0.0, min(1.0, final_similarity))
             
         except Exception as e:
             return 0.3
