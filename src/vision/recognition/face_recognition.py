@@ -149,19 +149,26 @@ class PersonRecognizer:
                     get_face=True     # 获取人脸图像用于注册
                 )
                 
-                # 查找未知人脸 (class_id == 0 表示未知)
-                unknown_face = None
+                # 查找可注册的人脸 (优先选择未知人脸)
+                target_face = None
+                
+                # 首先尝试找未知人脸 (class_id == 0)
                 for face in faces:
                     if face.class_id == 0:  # 未知人脸
-                        unknown_face = face
+                        target_face = face
                         break
                 
-                if unknown_face is None:
-                    return False, None, "未检测到可注册的新人脸"
+                # 如果没有未知人脸，选择第一个检测到的人脸进行强制注册
+                if target_face is None and faces:
+                    target_face = faces[0]
+                    print("⚠️ 未检测到未知人脸，使用第一个检测到的人脸进行注册")
+                
+                if target_face is None:
+                    return False, None, "未检测到任何人脸"
                 
                 # 使用内置识别器添加人脸
                 face_id = f"id_{self.builtin_learn_id}"
-                self.face_recognizer.add_face(unknown_face, face_id)
+                self.face_recognizer.add_face(target_face, face_id)
                 self.builtin_learn_id += 1
                 
                 # 保存模型数据
@@ -171,11 +178,11 @@ class PersonRecognizer:
                 person_id = f"person_{len(self.registered_persons) + 1:02d}"
                 
                 # 保存人脸缩略图用于显示
-                if unknown_face.face is not None:
+                if target_face.face is not None:
                     person_dir = os.path.join(self.faces_path, person_id) 
                     os.makedirs(person_dir, exist_ok=True)
                     sample_path = os.path.join(person_dir, "sample_001.jpg")
-                    self._save_face_image(unknown_face.face, sample_path)
+                    self._save_face_image(target_face.face, sample_path)
                     print(f"✓ 人脸图像已保存: {sample_path}")
                 
                 # 记录人物信息
