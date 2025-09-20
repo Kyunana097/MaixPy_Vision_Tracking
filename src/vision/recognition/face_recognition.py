@@ -11,6 +11,14 @@ import json
 import time
 import hashlib
 
+def _first_exists(paths):
+    """Finds the first path in a list that exists on the filesystem."""
+    import os
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
+
 class PersonRecognizer:
     """
     人物识别器类
@@ -43,13 +51,6 @@ class PersonRecognizer:
         # 初始化MaixPy内置高性能人脸识别器
         try:
             from maix import nn, sys
-            import os
-
-            def _first_exists(paths):
-                for p in paths:
-                    if os.path.exists(p):
-                        return p
-                return None
 
             device = sys.device_name().lower()
             detect_candidates = [
