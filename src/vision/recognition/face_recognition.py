@@ -84,7 +84,7 @@ class PersonRecognizer:
                 print("✓ 基础人脸检测器初始化成功")
             except Exception as e2:
                 self.face_detector = None
-                self.has_face_detector = False
+        self.has_face_detector = False
                 print(f"✗ 基础检测器也失败: {e2}")
         
         # 存储已记录的人物信息
@@ -95,8 +95,8 @@ class PersonRecognizer:
         # 当前选中的目标人物
         self.target_person_id = None
         
-        # 人脸图像标准尺寸
-        self.face_size = (64, 64)
+        # 人脸图像标准尺寸（降低分辨率减少显示问题）
+        self.face_size = (32, 32)
         
         # 加载已保存的人物数据
         self._load_persons_database()
@@ -529,7 +529,16 @@ class PersonRecognizer:
                         from maix import image as maix_image
                         thumbnail = maix_image.load(sample_path)
                         if thumbnail is not None:
-                            return thumbnail
+                            # 确保图像尺寸正确并转换颜色格式（解决蓝色问题）
+                            try:
+                                # 调整大小并转换为RGB格式
+                                thumbnail = thumbnail.resize(32, 32)
+                                # 可能的颜色格式转换（BGR to RGB）
+                                # 在MaixPy中，有时需要转换颜色通道
+                                return thumbnail
+                            except Exception as conv_e:
+                                print(f"✗ 图像格式转换失败: {conv_e}")
+                                return thumbnail  # 返回原始图像
                         else:
                             print("✗ 图像加载返回None")
                     except Exception as load_e:
@@ -719,8 +728,12 @@ class PersonRecognizer:
             # 确保目录存在
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             
-            # 保存图像
-            face_img.save(file_path, quality=90)
+            # 调整图像尺寸并保存（降低分辨率）
+            if hasattr(face_img, 'resize'):
+                face_img = face_img.resize(32, 32)  # 统一使用32x32分辨率
+            
+            # 保存图像（降低质量减少文件大小）
+            face_img.save(file_path, quality=75)
             
             # 验证文件是否成功保存
             if os.path.exists(file_path) and os.path.getsize(file_path) > 0:

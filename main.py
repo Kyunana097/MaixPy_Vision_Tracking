@@ -77,7 +77,7 @@ class MaixVisionSystem:
         self.gimbal = None  # 待集成：云台模块
         self.running = False
         self.disp = None
-        self.mode = os.getenv("MODE", "recognize")  # record | recognize | track
+        self.mode = os.getenv("MODE", "record")  # record | recognize | track
         if self.mode not in ("record", "recognize", "track"):
             self.mode = "recognize"
         print(f"Mode: {self.mode}")
@@ -712,8 +712,8 @@ class MaixVisionSystem:
             img_width = img.width() if callable(img.width) else img.width
             img_height = img.height() if callable(img.height) else img.height
             
-            # 缩略图显示位置（屏幕下方中央）
-            thumbnail_size = 64
+            # 缩略图显示位置（屏幕下方中央）- 降低分辨率
+            thumbnail_size = 32  # 从64降到32，减少显示问题
             thumbnail_x = (img_width - thumbnail_size) // 2
             thumbnail_y = img_height - thumbnail_size - 10
             
@@ -752,64 +752,44 @@ class MaixVisionSystem:
                 img.draw_rect(thumbnail_x, thumbnail_y, thumbnail_size, thumbnail_size,
                             color=white_color, thickness=2)
                 
-                # 显示人物名称
-                name_x = thumbnail_x + (thumbnail_size - len(person_name) * 8) // 2
-                img.draw_string(name_x, thumbnail_y + 20, person_name, 
-                              color=white_color, scale=1.0)
+                # 显示人物名称（适配32x32尺寸）
+                name_x = thumbnail_x + (thumbnail_size - len(person_name) * 4) // 2
+                img.draw_string(name_x, thumbnail_y + 12, person_name, 
+                              color=white_color, scale=0.7)
                 
                 # 显示样本数量
-                sample_text = f"Samples: {sample_count}"
-                sample_x = thumbnail_x + (thumbnail_size - len(sample_text) * 6) // 2
-                img.draw_string(sample_x, thumbnail_y + 40, sample_text, 
-                              color=info_color, scale=0.8)
+                sample_text = f"S:{sample_count}"  # 简化文本节省空间
+                sample_x = thumbnail_x + (thumbnail_size - len(sample_text) * 3) // 2
+                img.draw_string(sample_x, thumbnail_y + 24, sample_text, 
+                              color=info_color, scale=0.6)
                 
-                # 获取并显示实际缩略图（参考官方例子简化版）
+                # 获取并显示实际缩略图（简化版本，降低分辨率）
                 thumbnail = self.recognizer.get_person_thumbnail(display_person)
                 if thumbnail:
                     try:
-                        # 参考MaixCAM官方例子的简单方法
-                        # 先调整缩略图大小
+                        # 简化的图像显示方法
+                        # 调整缩略图大小到更小的尺寸
                         resized_thumb = thumbnail.resize(thumbnail_size, thumbnail_size)
                         
-                        # 尝试简单的图像绘制（最常用的方法）
-                        success = False
+                        # 直接使用最简单的绘制方法
                         try:
-                            # 方法1：直接使用draw_image（参考官方disp.show的原理）
                             img.draw_image(resized_thumb, thumbnail_x, thumbnail_y)
-                            success = True
-                        except Exception as e1:
-                            try:
-                                # 方法2：尝试MaixPy的图像拷贝
-                                # 获取缩略图的像素数据并直接绘制
-                                for dy in range(min(thumbnail_size, resized_thumb.height())):
-                                    for dx in range(min(thumbnail_size, resized_thumb.width())):
-                                        try:
-                                            # 简单的像素拷贝
-                                            if hasattr(resized_thumb, 'get_pixel') and hasattr(img, 'set_pixel'):
-                                                pixel = resized_thumb.get_pixel(dx, dy)
-                                                img.set_pixel(thumbnail_x + dx, thumbnail_y + dy, pixel)
-                                        except:
-                                            continue
-                                success = True
-                            except Exception as e2:
-                                # 所有方法都失败，显示简单的有效标识
-                                img.draw_string(thumbnail_x + 18, thumbnail_y + 10, "FACE", 
-                                              color=info_color, scale=0.7)
-                                img.draw_string(thumbnail_x + 15, thumbnail_y + 25, "FOUND", 
-                                              color=info_color, scale=0.7)
+                            # 在缩略图上方显示"IMG"标识
+                            img.draw_string(thumbnail_x + 8, thumbnail_y - 12, "IMG", 
+                                          color=info_color, scale=0.6)
+                        except Exception as e:
+                            # 如果图像绘制失败，显示简单标识
+                            img.draw_string(thumbnail_x + 8, thumbnail_y + 8, "FACE", 
+                                          color=info_color, scale=0.6)
                         
                     except Exception as e:
                         # 显示加载失败提示
-                        img.draw_string(thumbnail_x + 10, thumbnail_y + 15, "LOAD", 
-                                      color=_image.Color.from_rgb(255, 100, 100), scale=0.7)
-                        img.draw_string(thumbnail_x + 10, thumbnail_y + 30, "ERROR", 
-                                      color=_image.Color.from_rgb(255, 100, 100), scale=0.7)
+                        img.draw_string(thumbnail_x + 6, thumbnail_y + 8, "ERR", 
+                                      color=_image.Color.from_rgb(255, 100, 100), scale=0.6)
                 else:
                     # 显示"NO IMG"标识
-                    img.draw_string(thumbnail_x + 15, thumbnail_y + 15, "NO", 
-                                  color=_image.Color.from_rgb(255, 100, 100), scale=0.8)
-                    img.draw_string(thumbnail_x + 12, thumbnail_y + 30, "IMAGE", 
-                                  color=_image.Color.from_rgb(255, 100, 100), scale=0.7)
+                    img.draw_string(thumbnail_x + 6, thumbnail_y + 8, "NONE", 
+                                  color=_image.Color.from_rgb(255, 100, 100), scale=0.6)
             else:
                 # 显示无人物提示
                 white_color = _image.Color.from_rgb(255, 255, 255)
