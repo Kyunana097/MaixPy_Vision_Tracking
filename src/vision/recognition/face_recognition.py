@@ -64,6 +64,7 @@ class PersonRecognizer:
             )
             
             self.has_builtin_recognizer = True
+            self.has_face_detector = True  # 内置识别器包含人脸检测功能
             print("✓ 高性能人脸识别器初始化成功")
             print(f"  🎯 检测模型: {face_detect_model}")
             print(f"  🧠 特征模型: {feature_model}")
@@ -627,8 +628,28 @@ class PersonRecognizer:
         Returns:
             tuple: (x, y, w, h) 或 None
         """
-        # 如果有真实的人脸检测器，使用它
-        if self.has_face_detector and self.face_detector is not None:
+        # 优先使用高性能内置识别器进行检测
+        if self.has_builtin_recognizer:
+            try:
+                faces = self.face_recognizer.recognize(
+                    img, 
+                    conf_th=0.5, 
+                    iou_th=0.45, 
+                    score_th=0.1,  # 低阈值，只用于检测
+                    get_face=False, 
+                    learn=False
+                )
+                if not faces:
+                    return None
+                
+                # 找到最大的人脸
+                largest_face = max(faces, key=lambda face: face.w * face.h)
+                return (largest_face.x, largest_face.y, largest_face.w, largest_face.h)
+            except Exception as e:
+                print(f"⚠️ 内置检测器失败: {e}")
+        
+        # 回退到基础人脸检测器
+        if hasattr(self, 'has_face_detector') and self.has_face_detector and self.face_detector is not None:
             try:
                 faces = self.face_detector.detect(img)
                 if not faces:
