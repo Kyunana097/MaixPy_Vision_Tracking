@@ -54,7 +54,7 @@ class PersonRecognizer:
                 print("🚀 使用YOLOv8n人脸检测模型")
             
             # 使用高精度insightface模型
-            feature_model = "/root/models/insghtface_webface_r50.mud"
+            feature_model = "/root/models/insightface_webface_r50.mud"
             
             # 初始化高性能识别器 (GPU加速)
             self.face_recognizer = nn.FaceRecognizer(
@@ -106,8 +106,23 @@ class PersonRecognizer:
             try:
                 self.face_recognizer.load_faces(self.faces_bin_file)
                 print("✓ 已加载预训练人脸数据")
+                
+                # 同步 builtin_learn_id，确保与已注册人物一致
+                if self.registered_persons:
+                    max_builtin_id = max(
+                        person_info.get('builtin_id', 0) 
+                        for person_info in self.registered_persons.values()
+                    )
+                    self.builtin_learn_id = max_builtin_id + 1
+                    print(f"🔄 同步学习计数器: builtin_learn_id={self.builtin_learn_id}")
             except Exception as e:
                 print(f"⚠️ 人脸数据加载失败: {e}")
+                # 加载失败时清理bin文件，避免不一致
+                try:
+                    os.remove(self.faces_bin_file)
+                    print("🧹 已清理损坏的人脸数据文件")
+                except:
+                    pass
         
         print(f"✓ 高性能识别器初始化完成")
         print(f"   🎯 最大人数: {max_persons}, 识别阈值: {similarity_threshold}")
@@ -157,6 +172,7 @@ class PersonRecognizer:
                 
                 # 添加到内置识别器
                 face_id = f"id_{self.builtin_learn_id}"
+                print(f"📝 注册人脸: face_id='{face_id}', person_name='{person_name}'")
                 self.face_recognizer.add_face(target_face, face_id)
                 self.builtin_learn_id += 1
                 
@@ -327,12 +343,18 @@ class PersonRecognizer:
                 if best_face is not None:
                     # 根据内置识别器的标签找到对应的person
                     builtin_label = self.face_recognizer.labels[best_face.class_id]
+                    print(f"🔍 检测到已知人脸: class_id={best_face.class_id}, label='{builtin_label}', score={best_score:.3f}")
                     
                     # 查找对应的person_id
                     for person_id, person_info in self.registered_persons.items():
-                        if person_info.get('face_id') == builtin_label:
+                        face_id = person_info.get('face_id')
+                        print(f"  💾 检查 {person_id}: face_id='{face_id}', name='{person_info['name']}'")
+                        if face_id == builtin_label:
                             person_name = person_info['name']
+                            print(f"  ✅ 匹配成功: {person_name}")
                             return person_id, best_score, person_name
+                    
+                    print(f"  ⚠️  未找到匹配的person，builtin_label='{builtin_label}'")
                 
                 # 未找到匹配
                 return None, 0.0, "未知"
@@ -531,10 +553,9 @@ class PersonRecognizer:
                         if thumbnail is not None:
                             # 确保图像尺寸正确并转换颜色格式（解决蓝色问题）
                             try:
-                                # 调整大小并转换为RGB格式
+                                # 调整大小
                                 thumbnail = thumbnail.resize(32, 32)
-                                # 可能的颜色格式转换（BGR to RGB）
-                                # 在MaixPy中，有时需要转换颜色通道
+                                print(f"✓ 缩略图加载成功: {sample_path}, 尺寸={thumbnail.width()}x{thumbnail.height()}")
                                 return thumbnail
                             except Exception as conv_e:
                                 print(f"✗ 图像格式转换失败: {conv_e}")
