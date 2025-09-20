@@ -18,7 +18,7 @@ class PersonRecognizer:
     支持最多3个人物的记录和识别
     """
     
-    def __init__(self, model_path="data/models", max_persons=3, similarity_threshold=0.60, detector=None):
+    def __init__(self, model_path="data/models", max_persons=3, similarity_threshold=0.35, detector=None):
         """
         初始化人物识别器 (高性能版本)
         
@@ -136,127 +136,37 @@ class PersonRecognizer:
             if info['name'] == person_name:
                 return False, None, f"人物 '{person_name}' 已存在"
         
-        # 3. 智能注册策略：优先使用传入的bbox，避免重复检测
+        # 3. 简化的注册流程（恢复高效）
         if self.has_builtin_recognizer:
             try:
-                if bbox is not None:
-                    # 方案A：直接使用已检测的bbox进行注册（推荐）
-                    print(f"💡 使用传入的bbox直接注册: {bbox}")
-                    bbox_x, bbox_y, bbox_w, bbox_h = bbox
-                    
-                    # 从原图中提取人脸区域
-                    try:
-                        # 创建一个包含人脸区域的子图像
-                        face_region = img.crop(bbox_x, bbox_y, bbox_w, bbox_h)
-                        face_region = face_region.resize(64, 64)  # 标准化尺寸
-                        
-                        # 生成person_id并保存元数据
-                        person_id = f"person_{len(self.registered_persons) + 1:02d}"
-                        
-                        # 创建一个虚拟的face对象用于add_face
-                        # 由于我们有bbox，可以直接注册
-                        face_id = f"id_{self.builtin_learn_id}"
-                        
-                        # 保存人脸缩略图
-                        person_dir = os.path.join(self.faces_path, person_id) 
-                        os.makedirs(person_dir, exist_ok=True)
-                        sample_path = os.path.join(person_dir, "sample_001.jpg")
-                        self._save_face_image(face_region, sample_path)
-                        print(f"✓ 人脸图像已保存: {sample_path}")
-                        
-                        # 使用子图像区域进行学习（在全图中的位置）
-                        faces = self.face_recognizer.recognize(
-                            img, 
-                            conf_th=0.4,
-                            iou_th=0.45,
-                            compare_th=0.3,
-                            get_feature=False,
-                            get_face=True
-                        )
-                        
-                        # 在检测结果中寻找与bbox最接近的人脸
-                        target_face = None
-                        best_overlap = 0
-                        
-                        for face in faces:
-                            # 计算重叠区域
-                            x1 = max(bbox_x, face.x)
-                            y1 = max(bbox_y, face.y)
-                            x2 = min(bbox_x + bbox_w, face.x + face.w)
-                            y2 = min(bbox_y + bbox_h, face.y + face.h)
-                            
-                            if x2 > x1 and y2 > y1:
-                                overlap = (x2 - x1) * (y2 - y1)
-                                bbox_area = bbox_w * bbox_h
-                                face_area = face.w * face.h
-                                overlap_ratio = overlap / min(bbox_area, face_area)
-                                
-                                if overlap_ratio > best_overlap:
-                                    best_overlap = overlap_ratio
-                                    target_face = face
-                        
-                        if target_face and best_overlap > 0.1:  # 降低重叠阈值
-                            print(f"✓ 找到匹配的人脸进行学习 (重叠度: {best_overlap:.2f})")
-                            self.face_recognizer.add_face(target_face, face_id)
-                            self.builtin_learn_id += 1
-                            self.face_recognizer.save_faces(self.faces_bin_file)
-                        else:
-                            # 即使没找到完美匹配，也保存缩略图
-                            print(f"⚠️ 未找到匹配人脸，仅保存缩略图 (检测到 {len(faces)} 个人脸)")
-                        
-                        # 记录人物信息
-                        self.registered_persons[person_id] = {
-                            'name': person_name,
-                            'face_id': face_id,
-                            'builtin_id': self.builtin_learn_id - 1 if target_face else -1,
-                            'sample_count': 1,
-                            'created_time': time.time()
-                        }
-                        
-                        self.face_samples[person_id] = ["sample_001.jpg"]
-                        self._save_persons_database()
-                        
-                        return True, person_id, f"成功注册人物: {person_name} (使用bbox直接注册)"
-                        
-                    except Exception as e:
-                        print(f"✗ bbox直接注册失败: {e}")
-                        # 继续执行方案B
-                
-                # 方案B：使用内置识别器全图检测（回退方案）
-                print("🔄 回退到全图检测模式")
+                # 单一策略：使用内置识别器检测人脸
                 faces = self.face_recognizer.recognize(
                     img, 
-                    conf_th=0.4,     # 与recognize_person()一致的检测阈值
-                    iou_th=0.45,     # IoU阈值
-                    compare_th=0.3,  # 降低比较阈值，注册时更宽松 
-                    get_feature=False, # 不需要特征，提高性能
-                    get_face=True     # 获取人脸图像用于注册
+                    conf_th=0.3,     # 降低检测阈值，更容易检测到人脸
+                    iou_th=0.45,     
+                    compare_th=0.1,  # 注册时使用很低的比较阈值
+                    get_feature=False,
+                    get_face=True    # 获取人脸图像
                 )
                 
-                print(f"🔍 全图检测结果: 发现 {len(faces)} 个人脸对象")
+                if not faces:
+                    return False, None, "未检测到人脸"
                 
-                # 查找可注册的人脸
-                target_face = None
+                # 选择第一个检测到的人脸（简单有效）
+                target_face = faces[0]
                 
-                # 选择最佳人脸
-                if faces:
-                    target_face = faces[0]  # 简化：使用第一个检测到的人脸
-                    print(f"✓ 选择第一个检测到的人脸进行注册")
-                else:
-                    return False, None, f"全图检测失败: 未检测到任何人脸"
-                
-                # 使用内置识别器添加人脸
+                # 添加到内置识别器
                 face_id = f"id_{self.builtin_learn_id}"
                 self.face_recognizer.add_face(target_face, face_id)
                 self.builtin_learn_id += 1
                 
-                # 保存模型数据
+                # 保存模型
                 self.face_recognizer.save_faces(self.faces_bin_file)
                 
-                # 生成person_id并保存元数据
+                # 生成person_id
                 person_id = f"person_{len(self.registered_persons) + 1:02d}"
                 
-                # 保存人脸缩略图用于显示
+                # 保存缩略图
                 if target_face.face is not None:
                     person_dir = os.path.join(self.faces_path, person_id) 
                     os.makedirs(person_dir, exist_ok=True)
@@ -267,7 +177,7 @@ class PersonRecognizer:
                 # 记录人物信息
                 self.registered_persons[person_id] = {
                     'name': person_name,
-                    'face_id': face_id,  # 内置识别器中的ID
+                    'face_id': face_id,
                     'builtin_id': self.builtin_learn_id - 1,
                     'sample_count': 1,
                     'created_time': time.time()
@@ -279,8 +189,7 @@ class PersonRecognizer:
                 return True, person_id, f"成功注册人物: {person_name}"
                 
             except Exception as e:
-                print(f"✗ 高性能注册失败: {e}")
-                # 不回退，直接返回失败
+                print(f"✗ 注册失败: {e}")
                 return False, None, f"注册失败: {str(e)}"
                 
         else:
@@ -393,15 +302,15 @@ class PersonRecognizer:
         if not self.registered_persons:
             return None, 0.0, "未知"
         
-        # 2. 使用高性能识别器
+        # 2. 使用高性能识别器（简化并优化参数）
         if self.has_builtin_recognizer:
             try:
                 # 使用内置识别器进行识别（GPU加速）
                 faces = self.face_recognizer.recognize(
                     img, 
-                    conf_th=0.4,     # 降低检测置信度阈值  
+                    conf_th=0.3,     # 降低检测置信度阈值，更容易检测  
                     iou_th=0.45,     # IoU阈值  
-                    compare_th=self.similarity_threshold,  # 比较阈值 (修正参数名)
+                    compare_th=0.3,  # 降低比较阈值，更容易识别成功
                     get_feature=False, # 不需要特征，提高性能
                     get_face=False   # 不需要获取人脸图像，提高性能
                 )
@@ -719,9 +628,9 @@ class PersonRecognizer:
             try:
                 faces = self.face_recognizer.recognize(
                     img, 
-                    conf_th=0.4,     # 降低检测置信度阈值
+                    conf_th=0.3,     # 统一降低检测阈值
                     iou_th=0.45, 
-                    compare_th=0.1,  # 低阈值，只用于检测 (修正参数名)
+                    compare_th=0.1,  # 低阈值，只用于检测
                     get_feature=False, # 不需要特征
                     get_face=False   # 不需要人脸图像
                 )
