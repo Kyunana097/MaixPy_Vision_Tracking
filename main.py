@@ -7,7 +7,7 @@ MaixPy 视觉识别云台系统 - 主程序
 """
 
 # ==================== 版本信息 ====================
-__version__ = "2.2.4"
+__version__ = "2.2.5"
 __release_date__ = "2025-09-20"
 __author__ = "Kyunana"
 __description__ = "MaixPy 智能视觉识别云台系统"
@@ -774,7 +774,9 @@ class MaixVisionSystem:
                         # 直接使用最简单的绘制方法
                         try:
                             img.draw_image(resized_thumb, thumbnail_x, thumbnail_y)
+                            print(f"🖼️ 缩略图绘制成功: {display_person}")
                         except Exception as e:
+                            print(f"✗ 缩略图绘制失败: {e}")
                             # 如果图像绘制失败，显示简单标识
                             img.draw_string(thumbnail_x + 8, thumbnail_y + 8, "FACE", 
                                           color=info_color, scale=0.6)

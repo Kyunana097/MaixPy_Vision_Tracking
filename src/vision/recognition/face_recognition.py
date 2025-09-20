@@ -415,6 +415,7 @@ class PersonRecognizer:
         for person_id in self.registered_persons:
             # 计算与该人物所有样本的相似度
             person_similarity = self._calculate_person_similarity(face_img, person_id)
+            print(f"🔍 与{person_id}({self.registered_persons[person_id]['name']})的相似度: {person_similarity:.3f}")
             
             if person_similarity > best_confidence:
                 best_confidence = person_similarity
@@ -912,29 +913,57 @@ class PersonRecognizer:
             # 由于MaixPy限制，使用简化的特征提取方法
             # 基于图像的统计特征进行比较
             
-            # 1. 图像亮度分布特征
+            # 1. 图像内容特征提取
             try:
-                # 尝试保存临时文件来获取像素信息
                 import tempfile
                 import os
                 
                 with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
-                    img.save(tmp.name)
+                    img.save(tmp.name, quality=95)  # 高质量保存以保持细节
                     tmp_path = tmp.name
                 
-                # 读取文件获取基本统计信息
-                file_size = os.path.getsize(tmp_path)
+                # 读取文件内容进行分析
+                with open(tmp_path, 'rb') as f:
+                    content = f.read()
                 
-                # 基于文件大小和图像尺寸计算特征
+                file_size = len(content)
+                
+                # 特征1: 图像密度
                 density = file_size / (width * height) if (width * height) > 0 else 0
                 features.append(density)
+                
+                # 特征2: 文件内容的字节分布特征
+                if len(content) > 100:
+                    # 计算前100字节的平均值
+                    header_avg = sum(content[:100]) / 100.0
+                    features.append(header_avg)
+                    
+                    # 计算中间100字节的平均值
+                    mid_start = len(content) // 2 - 50
+                    mid_end = mid_start + 100
+                    if mid_end <= len(content):
+                        mid_avg = sum(content[mid_start:mid_end]) / 100.0
+                        features.append(mid_avg)
+                    else:
+                        features.append(header_avg)  # 回退
+                    
+                    # 计算后100字节的平均值
+                    if len(content) >= 100:
+                        tail_avg = sum(content[-100:]) / 100.0
+                        features.append(tail_avg)
+                    else:
+                        features.append(header_avg)  # 回退
+                else:
+                    # 文件太小，使用基本特征
+                    features.extend([128.0, 128.0, 128.0])  # 默认值
                 
                 # 清理临时文件
                 os.unlink(tmp_path)
                 
-            except Exception:
-                # 如果无法创建临时文件，使用基本特征
-                features.append(width * height)
+            except Exception as e:
+                print(f"✗ 特征提取失败: {e}")
+                # 使用基本特征
+                features.extend([width * height, 128.0, 128.0, 128.0])
             
             # 2. 图像形状特征
             aspect_ratio = width / height if height > 0 else 1.0
@@ -975,16 +1004,25 @@ class PersonRecognizer:
             avg_diff = total_diff / len(features1)
             similarity = max(0.0, 1.0 - avg_diff)
             
-            # 增加一些随机性以避免所有图像得到相同分数
-            import time
+            # 基于特征内容生成稳定但有区分度的调整因子
             import hashlib
             
-            # 基于特征内容生成一个稳定的调整因子
-            feature_str = str(sorted(features1)) + str(sorted(features2))
-            hash_obj = hashlib.md5(feature_str.encode())
-            hash_factor = int(hash_obj.hexdigest()[:8], 16) % 100 / 1000.0  # 0.0-0.1的调整
+            # 使用特征差异生成更有区分度的分数
+            feature_str1 = ''.join([f"{f:.6f}" for f in features1])
+            feature_str2 = ''.join([f"{f:.6f}" for f in features2])
             
-            similarity = max(0.1, min(0.95, similarity + hash_factor))
+            # 计算两个特征字符串的哈希差异
+            hash1 = hashlib.md5(feature_str1.encode()).hexdigest()
+            hash2 = hashlib.md5(feature_str2.encode()).hexdigest()
+            
+            # 计算哈希字符串的差异度
+            hash_diff = sum(c1 != c2 for c1, c2 in zip(hash1, hash2)) / len(hash1)
+            
+            # 基于差异调整相似度 - 差异大则相似度低
+            hash_adjustment = 1.0 - hash_diff
+            final_similarity = (similarity * 0.7) + (hash_adjustment * 0.3)
+            
+            similarity = max(0.1, min(0.95, final_similarity))
             
             return similarity
             
