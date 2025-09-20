@@ -6,6 +6,22 @@ MaixPy 视觉识别云台系统 - 主程序
 描述: 主程序入口，负责系统初始化和主循环控制
 """
 
+# ==================== 版本信息 ====================
+__version__ = "2.1.0"
+__release_date__ = "2025-09-20"
+__author__ = "Kyunana"
+__description__ = "MaixPy 智能视觉识别云台系统"
+
+def print_version_info():
+    """打印版本信息"""
+    print("=" * 60)
+    print(f"🚀 {__description__}")
+    print(f"📦 版本: {__version__}")
+    print(f"📅 发布日期: {__release_date__}")
+    print(f"👨‍💻 作者: {__author__}")
+    print("=" * 60)
+    print()
+
 import sys
 import os
 import time
@@ -463,11 +479,11 @@ class MaixVisionSystem:
         pass
     
     def _handle_record_add(self):
-        """处理录制模式的添加按钮"""
+        """处理录制模式的添加按钮（智能避免重复记录）"""
         print("➕ Record mode: ADD button pressed")
         
-        if not self.recognizer:
-            print("✗ 识别器未初始化")
+        if not self.recognizer or not self.detector:
+            print("✗ 识别器或检测器未初始化")
             return
         
         # 获取当前画面
@@ -482,17 +498,62 @@ class MaixVisionSystem:
             print(f"✗ 已达到最大人数限制 ({status['max_persons']})")
             return
         
+        # 检测画面中的人物
+        detections = self.detector.detect_persons(img)
+        if not detections:
+            print("✗ 画面中未检测到人物")
+            return
+        
+        # 查找未知人物（需要注册的人物）
+        unknown_faces = []
+        known_count = 0
+        
+        for detection in detections:
+            face_bbox = detection.get('face_bbox')
+            if face_bbox:
+                try:
+                    # 尝试识别这个人脸
+                    person_name, confidence = self.recognizer.recognize_person(img, face_bbox)
+                    
+                    if person_name and confidence > 0.6:
+                        # 已知人物
+                        known_count += 1
+                        print(f"⚠️ 检测到已知人物: {person_name} (置信度: {confidence:.2f})")
+                    else:
+                        # 未知人物，可以注册
+                        unknown_faces.append(face_bbox)
+                except Exception as e:
+                    # 识别失败，当作未知人物
+                    unknown_faces.append(face_bbox)
+        
+        # 处理结果
+        if not unknown_faces:
+            if known_count > 0:
+                print("ℹ️ 画面中全是已知人物，无需重复添加")
+            else:
+                print("✗ 未能识别到可注册的人脸")
+            return
+        
+        # 选择第一个未知人脸进行注册
+        target_face_bbox = unknown_faces[0]
+        
         # 生成人物名称
         person_name = f"Person{status['registered_count'] + 1}"
         
         # 注册新人物
-        print(f"🔄 开始注册人物: {person_name}")
-        success, person_id, message = self.recognizer.register_person(img, person_name)
+        print(f"🔄 开始注册新人物: {person_name}")
+        print(f"📊 画面分析: {len(unknown_faces)} 个未知人物, {known_count} 个已知人物")
+        
+        success, person_id, message = self.recognizer.register_person(img, person_name, target_face_bbox)
         if success:
             print(f"✅ {message}")
             print(f"   人物ID: {person_id}")
             # 更新缩略图显示
             self.current_thumbnail_person = person_id
+            
+            # 如果还有其他未知人物，提示用户
+            if len(unknown_faces) > 1:
+                print(f"ℹ️ 还有 {len(unknown_faces) - 1} 个未知人物可以继续添加")
         else:
             print(f"✗ 注册失败: {message}")
     
@@ -702,57 +763,53 @@ class MaixVisionSystem:
                 img.draw_string(sample_x, thumbnail_y + 40, sample_text, 
                               color=info_color, scale=0.8)
                 
-                # 获取并显示实际缩略图
+                # 获取并显示实际缩略图（参考官方例子简化版）
                 thumbnail = self.recognizer.get_person_thumbnail(display_person)
                 if thumbnail:
                     try:
-                        # 确保缩略图大小合适
-                        thumb_w = thumbnail.width() if callable(thumbnail.width) else thumbnail.width
-                        thumb_h = thumbnail.height() if callable(thumbnail.height) else thumbnail.height
+                        # 参考MaixCAM官方例子的简单方法
+                        # 先调整缩略图大小
+                        resized_thumb = thumbnail.resize(thumbnail_size, thumbnail_size)
                         
-                        # 如果尺寸不匹配，调整缩略图大小
-                        if thumb_w != thumbnail_size or thumb_h != thumbnail_size:
-                            thumbnail = thumbnail.resize(thumbnail_size, thumbnail_size)
-                        
-                        # 使用MaixPy最常见的图像合成方法
+                        # 尝试简单的图像绘制（最常用的方法）
                         success = False
-                        
-                        # 方法1：尝试 draw_image (最常见)
                         try:
-                            img.draw_image(thumbnail, thumbnail_x, thumbnail_y)
+                            # 方法1：直接使用draw_image（参考官方disp.show的原理）
+                            img.draw_image(resized_thumb, thumbnail_x, thumbnail_y)
                             success = True
-                        except:
-                            pass
-                        
-                        # 方法2：尝试 copy_to (备选)
-                        if not success:
+                        except Exception as e1:
                             try:
-                                thumbnail.copy_to(img, thumbnail_x, thumbnail_y)
+                                # 方法2：尝试MaixPy的图像拷贝
+                                # 获取缩略图的像素数据并直接绘制
+                                for dy in range(min(thumbnail_size, resized_thumb.height())):
+                                    for dx in range(min(thumbnail_size, resized_thumb.width())):
+                                        try:
+                                            # 简单的像素拷贝
+                                            if hasattr(resized_thumb, 'get_pixel') and hasattr(img, 'set_pixel'):
+                                                pixel = resized_thumb.get_pixel(dx, dy)
+                                                img.set_pixel(thumbnail_x + dx, thumbnail_y + dy, pixel)
+                                        except:
+                                            continue
                                 success = True
-                            except:
-                                pass
+                            except Exception as e2:
+                                # 所有方法都失败，显示简单的有效标识
+                                img.draw_string(thumbnail_x + 18, thumbnail_y + 10, "FACE", 
+                                              color=info_color, scale=0.7)
+                                img.draw_string(thumbnail_x + 15, thumbnail_y + 25, "FOUND", 
+                                              color=info_color, scale=0.7)
                         
-                        # 方法3：尝试 blit (备选)
-                        if not success:
-                            try:
-                                img.blit(thumbnail, thumbnail_x, thumbnail_y)
-                                success = True
-                            except:
-                                pass
-                        
-                        # 如果都失败，显示加载成功提示
-                        if not success:
-                            img.draw_string(thumbnail_x + 5, thumbnail_y + 5, "LOADED", 
-                                          color=info_color, scale=0.6)
-                        
-                    except Exception:
+                    except Exception as e:
                         # 显示加载失败提示
-                        img.draw_string(thumbnail_x + 10, thumbnail_y + 5, "FAILED", 
-                                      color=_image.Color.from_rgb(255, 100, 100), scale=0.6)
+                        img.draw_string(thumbnail_x + 10, thumbnail_y + 15, "LOAD", 
+                                      color=_image.Color.from_rgb(255, 100, 100), scale=0.7)
+                        img.draw_string(thumbnail_x + 10, thumbnail_y + 30, "ERROR", 
+                                      color=_image.Color.from_rgb(255, 100, 100), scale=0.7)
                 else:
                     # 显示"NO IMG"标识
-                    img.draw_string(thumbnail_x + 15, thumbnail_y + 5, "NO IMG", 
-                                  color=_image.Color.from_rgb(255, 100, 100), scale=0.6)
+                    img.draw_string(thumbnail_x + 15, thumbnail_y + 15, "NO", 
+                                  color=_image.Color.from_rgb(255, 100, 100), scale=0.8)
+                    img.draw_string(thumbnail_x + 12, thumbnail_y + 30, "IMAGE", 
+                                  color=_image.Color.from_rgb(255, 100, 100), scale=0.7)
             else:
                 # 显示无人物提示
                 white_color = _image.Color.from_rgb(255, 255, 255)
@@ -766,32 +823,57 @@ class MaixVisionSystem:
 
     # =============== 模式实现（占位，用于分模块调试） ===============
     def _mode_record(self, img):
-        # 检测+注册流程模式
-        if self.detector:
+        # 检测+注册流程模式（智能识别已有人物）
+        if self.detector and self.recognizer:
             # 检测人物
             detections = self.detector.detect_persons(img)
             
             if detections:
-                # 绘制检测框（录制模式用黄色）
                 try:
                     from maix import image as _image
+                    green_color = _image.Color.from_rgb(0, 255, 0)  # 已知人物用绿色
+                    yellow_color = _image.Color.from_rgb(255, 255, 0)  # 未知人物用黄色
+                    
+                    for detection in detections:
+                        bbox = detection['bbox']
+                        face_bbox = detection.get('face_bbox')
+                        x, y, w, h = bbox
+                        
+                        # 尝试识别人物
+                        person_name = None
+                        confidence = 0.0
+                        
+                        if face_bbox:
+                            try:
+                                # 提取人脸区域进行识别
+                                fx, fy, fw, fh = face_bbox
+                                person_name, confidence = self.recognizer.recognize_person(img, face_bbox)
+                            except Exception as e:
+                                pass  # 识别失败，当作未知人物处理
+                        
+                        # 根据识别结果绘制不同的标识
+                        if person_name and confidence > 0.6:
+                            # 已知人物 - 绿色边框和名称
+                            img.draw_rect(x, y, w, h, color=green_color, thickness=2)
+                            img.draw_string(x, max(y-20, 0), f"{person_name}", color=green_color)
+                            # 添加置信度显示
+                            conf_text = f"({confidence:.2f})"
+                            img.draw_string(x, max(y-5, 0), conf_text, color=green_color, scale=0.8)
+                        else:
+                            # 未知人物 - 黄色边框和Recording标识
+                            img.draw_rect(x, y, w, h, color=yellow_color, thickness=2)
+                            img.draw_string(x, max(y-20, 0), "Recording...", color=yellow_color)
+                            # 提示可以点击ADD按钮添加
+                            img.draw_string(x, max(y-5, 0), "Press ADD", color=yellow_color, scale=0.8)
+                
+                except Exception as e:
+                    # 降级到简单显示
                     for detection in detections:
                         bbox = detection['bbox']
                         x, y, w, h = bbox
                         yellow_color = _image.Color.from_rgb(255, 255, 0)
                         img.draw_rect(x, y, w, h, color=yellow_color, thickness=2)
-                        
-                        # 绘制提示
                         img.draw_string(x, max(y-20, 0), "Recording...", color=yellow_color)
-                except:
-                    pass
-                
-                # TODO: 添加注册逻辑
-                # if self.recognizer:
-                #     for detection in detections:
-                #         face_bbox = detection.get('face_bbox')
-                #         if face_bbox:
-                #             success, person_id, message = self.recognizer.register_person(img, "NewPerson", face_bbox)
         else:
             # 检测器未初始化时显示提示
             try:
@@ -865,6 +947,9 @@ class MaixVisionSystem:
 
 
 def main():
+    # 打印版本信息
+    print_version_info()
+    
     system = MaixVisionSystem()
     system.start_system()
 
