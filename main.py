@@ -7,7 +7,7 @@ MaixPy 视觉识别云台系统 - 主程序
 """
 
 # ==================== 版本信息 ====================
-__version__ = "2.2.3"
+__version__ = "2.2.4"
 __release_date__ = "2025-09-20"
 __author__ = "Kyunana"
 __description__ = "MaixPy 智能视觉识别云台系统"
@@ -712,10 +712,10 @@ class MaixVisionSystem:
             img_width = img.width() if callable(img.width) else img.width
             img_height = img.height() if callable(img.height) else img.height
             
-            # 缩略图显示位置（屏幕下方中央）- 降低分辨率
-            thumbnail_size = 32  # 从64降到32，减少显示问题
+            # 缩略图显示位置（屏幕下方中央）- 适度放大便于观察
+            thumbnail_size = 48  # 从32增加到48，便于观察人脸细节
             thumbnail_x = (img_width - thumbnail_size) // 2
-            thumbnail_y = img_height - thumbnail_size - 10
+            thumbnail_y = img_height - thumbnail_size - 15
             
             # 绘制缩略图背景框
             bg_color = _image.Color.from_rgb(50, 50, 50)  # 深灰色背景
@@ -752,16 +752,16 @@ class MaixVisionSystem:
                 img.draw_rect(thumbnail_x, thumbnail_y, thumbnail_size, thumbnail_size,
                             color=white_color, thickness=2)
                 
-                # 显示人物名称（适配32x32尺寸）
-                name_x = thumbnail_x + (thumbnail_size - len(person_name) * 4) // 2
-                img.draw_string(name_x, thumbnail_y + 12, person_name, 
-                              color=white_color, scale=0.7)
+                # 显示人物名称（在缩略图上方，不遮挡图像）
+                name_x = thumbnail_x + (thumbnail_size - len(person_name) * 5) // 2
+                img.draw_string(name_x, thumbnail_y - 18, person_name, 
+                              color=white_color, scale=0.8)
                 
-                # 显示样本数量
-                sample_text = f"S:{sample_count}"  # 简化文本节省空间
-                sample_x = thumbnail_x + (thumbnail_size - len(sample_text) * 3) // 2
-                img.draw_string(sample_x, thumbnail_y + 24, sample_text, 
-                              color=info_color, scale=0.6)
+                # 显示样本数量（在缩略图下方）
+                sample_text = f"S:{sample_count}"
+                sample_x = thumbnail_x + (thumbnail_size - len(sample_text) * 4) // 2
+                img.draw_string(sample_x, thumbnail_y + thumbnail_size + 8, sample_text, 
+                              color=info_color, scale=0.7)
                 
                 # 获取并显示实际缩略图（简化版本，降低分辨率）
                 thumbnail = self.recognizer.get_person_thumbnail(display_person)
@@ -774,9 +774,6 @@ class MaixVisionSystem:
                         # 直接使用最简单的绘制方法
                         try:
                             img.draw_image(resized_thumb, thumbnail_x, thumbnail_y)
-                            # 在缩略图上方显示"IMG"标识
-                            img.draw_string(thumbnail_x + 8, thumbnail_y - 12, "IMG", 
-                                          color=info_color, scale=0.6)
                         except Exception as e:
                             # 如果图像绘制失败，显示简单标识
                             img.draw_string(thumbnail_x + 8, thumbnail_y + 8, "FACE", 
