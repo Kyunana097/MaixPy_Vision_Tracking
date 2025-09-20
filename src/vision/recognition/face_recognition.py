@@ -935,6 +935,7 @@ class PersonRecognizer:
                 md5_hash = hashlib.md5(content).hexdigest()
                 hash_feature = int(md5_hash[:8], 16) % 10000  # 限制在0-9999范围
                 features.append(hash_feature / 10000.0)  # 归一化到0-1
+                print(f"🔍 特征调试 - MD5前8位: {md5_hash[:8]}, 哈希特征: {hash_feature/10000.0:.4f}")
                 
                 # 特征2: 文件大小特征
                 file_size = len(content)
@@ -956,6 +957,8 @@ class PersonRecognizer:
                     avg_byte = byte_sum / len(mid_content) if len(mid_content) > 0 else 0
                     variance = sum((b - avg_byte) ** 2 for b in mid_content[:100]) % 10000
                     features.append(variance / 10000.0)
+                    
+                    print(f"🔍 特征调试 - 文件大小: {file_size}, 字节和: {byte_sum}, 方差: {variance}")
                 else:
                     features.extend([0.5, 0.5])  # 默认值
                 
@@ -1002,14 +1005,18 @@ class PersonRecognizer:
             
             # 计算特征向量的欧氏距离
             total_diff = 0.0
-            for f1, f2 in zip(features1, features2):
+            for i, (f1, f2) in enumerate(zip(features1, features2)):
                 if f1 != 0 and f2 != 0:
                     diff = abs(f1 - f2) / max(abs(f1), abs(f2))
                     total_diff += diff
+                    print(f"🔍 特征{i+1}: {f1:.4f} vs {f2:.4f}, 归一化差异: {diff:.4f}")
+                else:
+                    print(f"🔍 特征{i+1}: {f1:.4f} vs {f2:.4f}, 跳过零值")
             
             # 转换为相似度
             avg_diff = total_diff / len(features1)
             similarity = max(0.0, 1.0 - avg_diff)
+            print(f"🔍 总差异: {total_diff:.4f}, 平均差异: {avg_diff:.4f}, 相似度: {similarity:.4f}")
             
             # 直接使用欧氏距离的相似度，不再添加复杂的调整
             # 这样可以确保不同的特征向量产生不同的相似度分数

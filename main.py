@@ -7,7 +7,7 @@ MaixPy 视觉识别云台系统 - 主程序
 """
 
 # ==================== 版本信息 ====================
-__version__ = "2.2.6"
+__version__ = "2.2.7-debug"
 __release_date__ = "2025-09-20"
 __author__ = "Kyunana"
 __description__ = "MaixPy 智能视觉识别云台系统"
