@@ -9,7 +9,7 @@ MaixPy 预训练人脸识别系统
 """
 
 # ==================== 版本信息 ====================
-__version__ = "6.1.0-clean"
+__version__ = "6.2.0-demo-mode"
 __release_date__ = "2025-09-21"
 __author__ = "Kyunana"
 __description__ = "MaixPy 预训练人脸识别系统"
@@ -118,7 +118,15 @@ class PretrainedFaceSystem:
             # 初始化虚拟按钮
             if MAIX_AVAILABLE and self.touchscreen:
                 print("🔘 Initializing virtual buttons...")
-                self.button_manager = VirtualButtonManager(self.touchscreen)
+                # 获取显示器尺寸
+                display_width = 640 if self.display else 640
+                display_height = 480 if self.display else 480
+                
+                self.button_manager = VirtualButtonManager(
+                    self.touchscreen, 
+                    display_width, 
+                    display_height
+                )
                 self._create_buttons()
                 print("✅ Virtual buttons initialized")
             
@@ -209,9 +217,13 @@ class PretrainedFaceSystem:
             self._simulate_run()
             return
         
-        if not self.camera or not self.display or not self.recognizer or not self.recognizer.model_loaded:
-            print("❌ Critical components not initialized, cannot start")
+        if not self.camera or not self.display:
+            print("❌ Critical components (camera/display) not initialized, cannot start")
             return
+        
+        if not self.recognizer or not self.recognizer.model_loaded:
+            print("⚠️ 识别器未加载，将以演示模式运行")
+            print("📺 演示模式: 显示摄像头画面，但不进行人脸识别")
         
         print("🚀 Starting main loop...")
         self.running = True
@@ -227,13 +239,18 @@ class PretrainedFaceSystem:
                 if self.button_manager:
                     self.button_manager.handle_touch()
                 
-                # 人脸识别
-                person_id, confidence, person_name = self.recognizer.recognize(img)
-                
-                if person_id:
-                    self.last_person_id = person_id
-                    self.last_confidence = confidence
-                    self.last_person_name = person_name
+                # 人脸识别（如果识别器可用）
+                if self.recognizer and self.recognizer.model_loaded:
+                    person_id, confidence, person_name = self.recognizer.recognize(img)
+                    
+                    if person_id:
+                        self.last_person_id = person_id
+                        self.last_confidence = confidence
+                        self.last_person_name = person_name
+                else:
+                    # 演示模式：显示提示信息
+                    if self.frame_count % 60 == 0:  # 每60帧显示一次提示
+                        print("📺 演示模式运行中 - 识别器未加载")
                 
                 # 绘制UI
                 self._draw_ui(img)
@@ -285,7 +302,13 @@ class PretrainedFaceSystem:
                           color=image.COLOR_GREEN, scale=1.0)
             
             # 绘制识别结果
-            if self.last_person_name != "unknown":
+            if not self.recognizer or not self.recognizer.model_loaded:
+                # 演示模式
+                img.draw_rectangle(10, 60, 300, 50, color=image.COLOR_BLACK, thickness=-1)
+                img.draw_rectangle(10, 60, 300, 50, color=image.COLOR_BLUE, thickness=2)
+                img.draw_string(15, 70, "演示模式", color=image.COLOR_BLUE, scale=1.5)
+                img.draw_string(15, 90, "识别器未加载", color=image.COLOR_WHITE, scale=1.0)
+            elif self.last_person_name != "unknown":
                 # 识别成功
                 result_text = f"识别: {self.last_person_name}"
                 confidence_text = f"置信度: {self.last_confidence:.3f}"

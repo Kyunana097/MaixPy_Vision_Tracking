@@ -71,11 +71,14 @@ class PretrainedRecognizer:
                 try:
                     from maix import nn
                     # 尝试使用maix.nn加载.kmodel文件
-                    # 注意: 这可能不兼容，但我们尝试一下
                     print("⚠️ 警告: .kmodel文件可能与maix.nn不兼容")
+                    print("💡 建议: 使用MaixPy v4版本以获得KPU支持")
+                    print("🔄 系统将以演示模式运行")
                     return False
                 except ImportError:
                     print("❌ 无法导入任何神经网络模块")
+                    print("💡 建议: 确保在MaixCAM设备上运行")
+                    print("🔄 系统将以演示模式运行")
                     return False
             
         except Exception as e:
