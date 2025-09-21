@@ -9,7 +9,7 @@ MaixPy 预训练人脸识别系统
 """
 
 # ==================== 版本信息 ====================
-__version__ = "6.2.0-demo-mode"
+__version__ = "6.2.1-ui-fix"
 __release_date__ = "2025-09-21"
 __author__ = "Kyunana"
 __description__ = "MaixPy 预训练人脸识别系统"
