@@ -1,0 +1,43 @@
+{
+    "camera": {
+        "width": 320,
+        "height": 240,
+        "fps": 30,
+        "format": "RGB565"
+    },
+    "detection": {
+        "confidence_threshold": 0.7,
+        "min_detection_size": 50,
+        "max_detections": 3,
+        "green_box_color": [0, 255, 0],
+        "red_box_color": [255, 0, 0],
+        "box_thickness": 2
+    },
+    "recognition": {
+        "feature_extraction_method": "ORB",
+        "match_threshold": 0.8,
+        "max_features": 500
+    },
+    "tracking": {
+        "update_interval": 100,
+        "tracking_timeout": 5000,
+        "position_smoothing": true
+    },
+    "hardware": {
+        "buzzer_pin": 12,
+        "button_pin": 13,
+        "buzzer_frequency": 1000,
+        "alarm_duration": 10
+    },
+    "gimbal": {
+        "pan_range": [-90, 90],
+        "tilt_range": [-30, 30],
+        "step_size": 5,
+        "update_frequency": 10
+    },
+    "system": {
+        "debug_mode": true,
+        "save_images": false,
+        "log_level": "INFO"
+    }
+}

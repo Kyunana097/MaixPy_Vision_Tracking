@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# MaixPy specific
+*.cvimodel
+*.mud
+*.bin
+*.param
+
+# Data files
+data/
+models/
+temp/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

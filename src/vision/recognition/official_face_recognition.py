@@ -324,9 +324,13 @@ class OfficialFaceRecognizer:
     
     def get_status_info(self):
         """获取状态信息"""
+        # 计算总样本数
+        total_samples = sum(person_info.get('sample_count', 1) for person_info in self.registered_persons.values())
+        
         return {
             'registered_count': len(self.registered_persons),
             'max_persons': self.max_persons,
+            'total_samples': total_samples,  # 添加总样本数
             'has_face_detector': self.recognizer is not None,
             'has_official_api': True,
             'model_type': 'Official FaceRecognize API',

@@ -177,16 +177,16 @@ class PersonRecognizer:
             self.face_recognizer.save_faces(self.faces_bin_file)
             
             # 生成person_id并保存信息
-            person_id = f"person_{len(self.registered_persons) + 1:02d}"
-            
+        person_id = f"person_{len(self.registered_persons) + 1:02d}"
+        
             if target_face.face is not None:
                 person_dir = os.path.join(self.faces_path, person_id)
                 os.makedirs(person_dir, exist_ok=True)
                 sample_path = os.path.join(person_dir, "sample_001.jpg")
                 self._save_face_image(target_face.face, sample_path)
             
-            self.registered_persons[person_id] = {
-                'name': person_name,
+        self.registered_persons[person_id] = {
+            'name': person_name,
                 'face_id': face_id,
                 'builtin_id': self.builtin_learn_id - 1,
                 'sample_count': 1,
@@ -196,7 +196,7 @@ class PersonRecognizer:
             self.face_samples[person_id] = ["sample_001.jpg"]
             self._save_persons_database()
             
-            return True, person_id, f"成功注册人物: {person_name}"
+        return True, person_id, f"成功注册人物: {person_name}"
             
         except Exception as e:
             return False, None, f"注册失败: {str(e)}"
@@ -290,7 +290,7 @@ class PersonRecognizer:
             
         except Exception as e:
             return None, 0.0, "未知"
-    
+        
     def _recognize_with_fallback(self, img, bbox):
         """使用回退方法识别"""
         try:
