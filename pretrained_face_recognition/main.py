@@ -123,7 +123,6 @@ class PretrainedFaceSystem:
                 display_height = 480 if self.display else 480
                 
                 self.button_manager = VirtualButtonManager(
-                    self.touchscreen, 
                     display_width, 
                     display_height
                 )
@@ -149,30 +148,33 @@ class PretrainedFaceSystem:
         display_width = 640 if MAIX_AVAILABLE else 640
         display_height = 480 if MAIX_AVAILABLE else 480
         
-        # 退出按钮
+        # 采用原始项目的右侧垂直布局
+        button_x = display_width - 100  # 右侧位置
+        
+        # 退出按钮 (右上角)
         self.button_manager.add_button(
             "exit", 
-            x=display_width - 80, y=10, 
-            width=70, height=30,
+            x=button_x, y=20, 
+            width=80, height=40,
             text="EXIT",
             callback=self._handle_exit
         )
         
-        # 调试按钮
+        # 调试按钮 (EXIT下方)
         self.button_manager.add_button(
             "debug",
-            x=10, y=display_height - 50,
-            width=80, height=30,
+            x=button_x, y=70,
+            width=80, height=40,
             text="DEBUG",
             callback=self._handle_debug
         )
         
-        # 阈值调整按钮
+        # 阈值调整按钮 (DEBUG下方)
         self.button_manager.add_button(
             "threshold",
-            x=100, y=display_height - 50,
-            width=100, height=30,
-            text="THRESHOLD",
+            x=button_x, y=120,
+            width=70, height=35,
+            text="THRES",
             callback=self._handle_threshold
         )
     
@@ -304,8 +306,8 @@ class PretrainedFaceSystem:
             # 绘制识别结果
             if not self.recognizer or not self.recognizer.model_loaded:
                 # 演示模式
-                img.draw_rectangle(10, 60, 300, 50, color=image.COLOR_BLACK, thickness=-1)
-                img.draw_rectangle(10, 60, 300, 50, color=image.COLOR_BLUE, thickness=2)
+                img.draw_rect(10, 60, 300, 50, color=image.COLOR_BLACK, thickness=-1)
+                img.draw_rect(10, 60, 300, 50, color=image.COLOR_BLUE, thickness=2)
                 img.draw_string(15, 70, "演示模式", color=image.COLOR_BLUE, scale=1.5)
                 img.draw_string(15, 90, "识别器未加载", color=image.COLOR_WHITE, scale=1.0)
             elif self.last_person_name != "unknown":
@@ -314,16 +316,16 @@ class PretrainedFaceSystem:
                 confidence_text = f"置信度: {self.last_confidence:.3f}"
                 
                 # 绘制结果框
-                img.draw_rectangle(10, 60, 300, 50, color=image.COLOR_BLACK, thickness=-1)
-                img.draw_rectangle(10, 60, 300, 50, color=image.COLOR_GREEN, thickness=2)
+                img.draw_rect(10, 60, 300, 50, color=image.COLOR_BLACK, thickness=-1)
+                img.draw_rect(10, 60, 300, 50, color=image.COLOR_GREEN, thickness=2)
                 
                 # 绘制文字
                 img.draw_string(15, 70, result_text, color=image.COLOR_GREEN, scale=1.5)
                 img.draw_string(15, 90, confidence_text, color=image.COLOR_WHITE, scale=1.0)
             else:
                 # 未识别
-                img.draw_rectangle(10, 60, 300, 30, color=image.COLOR_BLACK, thickness=-1)
-                img.draw_rectangle(10, 60, 300, 30, color=image.COLOR_RED, thickness=2)
+                img.draw_rect(10, 60, 300, 30, color=image.COLOR_BLACK, thickness=-1)
+                img.draw_rect(10, 60, 300, 30, color=image.COLOR_RED, thickness=2)
                 img.draw_string(15, 70, "未识别到已知人物", color=image.COLOR_RED, scale=1.2)
             
             # 绘制按钮
