@@ -7,7 +7,7 @@ MaixPy 视觉识别云台系统 - 主程序
 """
 
 # ==================== 版本信息 ====================
-__version__ = "3.1.0"
+__version__ = "3.2.0"
 __release_date__ = "2025-09-20"
 __author__ = "Kyunana"
 __description__ = "MaixPy 智能视觉识别云台系统"
@@ -118,17 +118,40 @@ class MaixVisionSystem:
 
             # 初始化人物识别器
             print("🧠 Initializing person recognizer...")
+            
+            # 检查是否使用官方预训练模型
+            use_pretrained = os.getenv("USE_PRETRAINED_MODEL", "true").lower() == "true"
+            
             try:
-                from src.vision.recognition.face_recognition import PersonRecognizer
-                # 传入检测器实例，用于真实的图像相似度计算
-                self.recognizer = PersonRecognizer(
-                    max_persons=self.max_persons,
-                    detector=self.detector  # 关键：传入检测器用于图像比较
-                )
-                print("✅ Person recognizer initialized with real image comparison")
+                if use_pretrained:
+                    from src.vision.recognition.pretrained_face_recognition import PretrainedFaceRecognizer
+                    self.recognizer = PretrainedFaceRecognizer(
+                        detect_model_path="models/face_detect.mud",
+                        feature_model_path="models/face_feature.mud",
+                        similarity_threshold=0.7
+                    )
+                    print("✅ 官方预训练模型识别器初始化完成")
+                else:
+                    from src.vision.recognition.face_recognition import PersonRecognizer
+                    # 传入检测器实例，用于真实的图像相似度计算
+                    self.recognizer = PersonRecognizer(
+                        max_persons=self.max_persons,
+                        detector=self.detector  # 关键：传入检测器用于图像比较
+                    )
+                    print("✅ Person recognizer initialized with real image comparison")
             except Exception as e:
                 print(f"✗ Person recognizer initialization failed: {e}")
-                self.recognizer = None
+                print("🔄 尝试备用识别器...")
+                try:
+                    from src.vision.recognition.face_recognition import PersonRecognizer
+                    self.recognizer = PersonRecognizer(
+                        max_persons=self.max_persons,
+                        detector=self.detector
+                    )
+                    print("✅ 备用识别器初始化成功")
+                except Exception as e2:
+                    print(f"✗ 备用识别器也失败: {e2}")
+                    self.recognizer = None
 
             print("🎮 Initializing gimbal... (skipped - to be integrated)")
 
