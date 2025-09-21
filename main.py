@@ -7,7 +7,7 @@ MaixPy 视觉识别云台系统 - 主程序
 """
 
 # ==================== 版本信息 ====================
-__version__ = "3.2.0"
+__version__ = "3.3.0"
 __release_date__ = "2025-09-20"
 __author__ = "Kyunana"
 __description__ = "MaixPy 智能视觉识别云台系统"
@@ -119,18 +119,19 @@ class MaixVisionSystem:
             # 初始化人物识别器
             print("🧠 Initializing person recognizer...")
             
-            # 检查是否使用官方预训练模型
-            use_pretrained = os.getenv("USE_PRETRAINED_MODEL", "true").lower() == "true"
+            # 检查是否使用官方识别器
+            use_official = os.getenv("USE_OFFICIAL_MODEL", "true").lower() == "true"
             
             try:
-                if use_pretrained:
-                    from src.vision.recognition.pretrained_face_recognition import PretrainedFaceRecognizer
-                    self.recognizer = PretrainedFaceRecognizer(
-                        detect_model_path="models/face_detect.mud",
-                        feature_model_path="models/face_feature.mud",
-                        similarity_threshold=0.7
+                if use_official:
+                    from src.vision.recognition.official_face_recognition import OfficialFaceRecognizer
+                    self.recognizer = OfficialFaceRecognizer(
+                        detect_model_path="models/retinaface.mud",
+                        feature_model_path="models/fe_resnet.mud",
+                        similarity_threshold=70.0,  # 官方推荐阈值
+                        max_persons=self.max_persons
                     )
-                    print("✅ 官方预训练模型识别器初始化完成")
+                    print("✅ 官方FaceRecognize API识别器初始化完成")
                 else:
                     from src.vision.recognition.face_recognition import PersonRecognizer
                     # 传入检测器实例，用于真实的图像相似度计算
