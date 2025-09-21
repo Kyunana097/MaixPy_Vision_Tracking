@@ -9,7 +9,7 @@ MaixPy 预训练人脸识别系统
 """
 
 # ==================== 版本信息 ====================
-__version__ = "6.2.1-ui-fix"
+__version__ = "6.2.2-api-fix"
 __release_date__ = "2025-09-21"
 __author__ = "Kyunana"
 __description__ = "MaixPy 预训练人脸识别系统"
@@ -152,31 +152,31 @@ class PretrainedFaceSystem:
         button_x = display_width - 100  # 右侧位置
         
         # 退出按钮 (右上角)
-        self.button_manager.add_button(
+        exit_button = self.button_manager.create_button(
             "exit", 
             x=button_x, y=20, 
             width=80, height=40,
-            text="EXIT",
-            callback=self._handle_exit
+            text="EXIT"
         )
+        exit_button.set_click_callback(self._handle_exit)
         
         # 调试按钮 (EXIT下方)
-        self.button_manager.add_button(
+        debug_button = self.button_manager.create_button(
             "debug",
             x=button_x, y=70,
             width=80, height=40,
-            text="DEBUG",
-            callback=self._handle_debug
+            text="DEBUG"
         )
+        debug_button.set_click_callback(self._handle_debug)
         
         # 阈值调整按钮 (DEBUG下方)
-        self.button_manager.add_button(
+        threshold_button = self.button_manager.create_button(
             "threshold",
             x=button_x, y=120,
             width=70, height=35,
-            text="THRES",
-            callback=self._handle_threshold
+            text="THRES"
         )
+        threshold_button.set_click_callback(self._handle_threshold)
     
     def _handle_exit(self):
         """处理退出按钮"""
@@ -239,7 +239,10 @@ class PretrainedFaceSystem:
                 
                 # 处理触摸事件
                 if self.button_manager:
-                    self.button_manager.handle_touch()
+                    clicked_button = self.button_manager.check_touch_input()
+                    if clicked_button:
+                        print(f"🔘 Button clicked: {clicked_button}")
+                    self.button_manager.update()
                 
                 # 人脸识别（如果识别器可用）
                 if self.recognizer and self.recognizer.model_loaded:
@@ -330,7 +333,7 @@ class PretrainedFaceSystem:
             
             # 绘制按钮
             if self.button_manager:
-                self.button_manager.draw_buttons(img)
+                self.button_manager.draw_all(img)
         
         except Exception as e:
             print(f"UI draw error: {e}")
